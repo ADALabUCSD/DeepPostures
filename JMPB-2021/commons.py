@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def remove_gravity(acc, gt3x_frequency):
-    acc = np.array(acc)
+    acc = np.array(acc[0])
     alpha = 0.9
     temp = np.zeros(acc.shape)
     
@@ -19,7 +19,7 @@ def remove_gravity(acc, gt3x_frequency):
 
     acc = acc - gravity
 
-    return acc
+    return np.expand_dims(acc, axis=0)
 
 
 def data_generator(pre_processed_dir, subjects, gt3x_frequency, no_remove_gravity, include_time=False):
@@ -44,7 +44,7 @@ def data_generator(pre_processed_dir, subjects, gt3x_frequency, no_remove_gravit
                     yield x, [-1]
 
 
-def cnn_model(x, num_classes, keep_prob=None):
+def cnn_model(x, num_classes, training, keep_prob=None):
     data_format = 'channels_last'
     x = tf.transpose(x, [0, 2, 3, 1])
 
@@ -59,12 +59,12 @@ def cnn_model(x, num_classes, keep_prob=None):
 
     conv4 = tf.compat.v1.layers.conv2d(inputs=pool3, filters=256, kernel_size=[5, 1], data_format=data_format, padding= "same", activation=tf.nn.relu)
     if keep_prob is not None:
-        conv4 = tf.nn.dropout(conv4, keep_prob)
+        conv4 = tf.compat.v1.layers.dropout(conv4, rate=keep_prob, training=training)
     pool4 = tf.compat.v1.layers.max_pooling2d(conv4, [2, 1], 2, padding='same', data_format=data_format)
 
     conv5 = tf.compat.v1.layers.conv2d(inputs=pool4, filters=512, kernel_size=[5, 1], data_format=data_format, padding= "same", activation=tf.nn.relu)
     if keep_prob is not None:
-        conv5 = tf.nn.dropout(conv5, keep_prob)
+        conv5 = tf.compat.v1.layers.dropout(conv5, rate=keep_prob, training=training)
     pool5 = tf.compat.v1.layers.max_pooling2d(conv5, [2, 1], 2, padding='same', data_format=data_format)
 
     num_features = np.prod(pool5.get_shape().as_list()[1:])
