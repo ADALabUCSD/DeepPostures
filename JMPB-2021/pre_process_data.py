@@ -1,20 +1,22 @@
 import os
 import time
+import json
 import pandas as pd
 import numpy as np
 from datetime import timedelta, datetime
 import argparse
 
-LABEL_MAP = {'sitting': 0, 'standingStill': 1, 'walking/running': 2}
-ACC_FREQUENCY = 30
+
+def mode(lst):
+    return max(set(lst), key=lst.count)
 
 
-def preprocess_raw_data(gt3x_dir, activpal_dir, user_id):
+def preprocess_raw_data(gt3x_dir, activpal_dir, user_id, gt3x_frequency, label_map):
     if activpal_dir is not None:
         # Read activepal file
         def date_parser(x): return pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
         df_ap = pd.read_csv(os.path.join(activpal_dir, str(user_id)+'.csv'),
-                            parse_dates=['StartTime', 'EndTime'], date_parser=date_parser, usecols=['StartTime', 'EndTime', 'behavior'])
+                            parse_dates=['StartTime', 'EndTime'], date_parser=date_parser, usecols=['StartTime', 'EndTime', 'Behavior'])
 
         # Flatten the activepal file to 1 second resolution
         data = []
@@ -28,7 +30,7 @@ def preprocess_raw_data(gt3x_dir, activpal_dir, user_id):
 
             for i in range(int((x['EndTime']-x['StartTime']).total_seconds() + 1)):
                 data.append([segment_no, x['StartTime'] +
-                             timedelta(seconds=i), LABEL_MAP[x['behavior']]])
+                             timedelta(seconds=i), label_map[x['Behavior']]])
 
             prev_end_time = x['EndTime']
 
@@ -55,9 +57,9 @@ def preprocess_raw_data(gt3x_dir, activpal_dir, user_id):
     # Aggregate at 1 second resolution
     data = []
     begin_time = datetime.strptime(acc_start_time, '%m/%d/%Y %H:%M:%S')
-    for i in range(0, len(df_acc), 30):
-        x = np.array(df_acc.iloc[i:i+30])
-        data.append([begin_time + timedelta(seconds=i//ACC_FREQUENCY), x])
+    for i in range(0, len(df_acc), gt3x_frequency):
+        x = np.array(df_acc.iloc[i:i+gt3x_frequency])
+        data.append([begin_time + timedelta(seconds=i//gt3x_frequency), x])
 
     df_acc = pd.DataFrame(data)
     df_acc.columns = ['Time', 'Accelerometer']
@@ -68,6 +70,7 @@ def preprocess_raw_data(gt3x_dir, activpal_dir, user_id):
         df['User'] = user_id
         df = df[['User', 'Segment', 'Time', 'Accelerometer', 'Behavior']]
     else:
+        df = df_acc
         df['User'] = user_id
         df = df[['User', 'Time', 'Accelerometer']]
 
@@ -79,49 +82,66 @@ def extract_windows(original_df, window_size):
     for (user, segment), group in original_df.groupby(["User", "Segment"]):
         group.index = group["Time"]
         group = group[~group.index.duplicated(keep='first')]
-        temp1 = group["Accelerometer"].resample(
-            str(window_size)+'s', base=group.iloc[0][2].second).apply(lambda x: np.vstack(x.values.tolist()))[:-1]
-        temp2 = group["Behavior"].resample(str(window_size)+'s', base=group.iloc[0][2].second)\
-            .apply(lambda x: x.values.tolist()[0] if len(x.values.tolist()) == 1 else -1)[:-1]
-        temp = pd.concat([temp1, temp2], axis=1)
+        # [:-1] becuase the last row may not necessarily have window_size seconds of data
+        temp = group["Accelerometer"].resample(str(window_size)+'s', base=group.iloc[0][2].second).apply(lambda x: np.vstack(x.values.tolist()))[:-1]
+        
+        temp2 = group["Time"].resample(str(window_size)+'s', base=group.iloc[0][2].second).apply(lambda x: x.values.tolist()[0])
+        temp = pd.concat([temp, temp2], axis=1)[:-1]
+
+        if 'Behavior' in original_df.columns:
+            temp2 = group["Behavior"].resample(str(window_size)+'s', base=group.iloc[0][2].second).apply(lambda x: mode(x.values.tolist()))
+            temp = pd.concat([temp, temp2], axis=1)[:-1]
 
         temp["User"] = user
         temp["Segment"] = segment
 
-        temp = temp[["User", "Segment", "Accelerometer", "Behavior"]]
-        temp = temp[temp["Behavior"] >= 0]
+        if 'Behavior' in original_df.columns:
+            temp = temp[["User", "Segment", "Time", "Accelerometer", "Behavior"]]
+            temp = temp[temp["Behavior"] >= 0]
+        else:
+            temp = temp[["User", "Segment", "Time", "Accelerometer"]]
 
         df.append(temp)
 
     return pd.concat(df)
 
 
-def extract_features(gt3x_dir, activpal_dir, pre_processed_dir, user_id):
-    df = preprocess_raw_data(gt3x_dir, activpal_dir, user_id)
-    df = extract_windows(df, window_size=3)
-    df = df[['User', 'Segment', 'Accelerometer', 'Behavior']]
+def extract_features(gt3x_dir, activpal_dir, pre_processed_dir, user_id, window_size, gt3x_frequency, label_map):
+    df = preprocess_raw_data(gt3x_dir, activpal_dir, user_id, gt3x_frequency, label_map)
+    if activpal_dir is None:
+        df['Segment'] = 0
+        df = df[['User', 'Segment', 'Time', 'Accelerometer']]
+    
+    # We use a window of 3
+    df = extract_windows(df, window_size=window_size)
 
-    # write the joined table
+    # Write the joined table
     df.to_pickle(os.path.join(pre_processed_dir, str(user_id)+'.bin'))
 
 
-
-# Example invocation
-# python pre_process_data.py --gt3x-dir ./data/gt3x --pre-processed-dir ./data/pre-processed --activpal-dir ./data/activpal
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Argument parser for preprocessing the input data.')
-    parser.add_argument('--gt3x-dir', help='GT3X data directory')
-    parser.add_argument('--pre-processed-dir', help='Pre-processed data directory')
-    parser.add_argument('--activpal-dir', help='ActivPAL data directory')
+    optional_arguments = parser._action_groups.pop()
+    required_arguments = parser.add_argument_group('required arguments')
+    required_arguments.add_argument('--gt3x-dir', help='GT3X data directory', required=True)
+    required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
+    
+    optional_arguments.add_argument('--activpal-dir', help='ActivPAL data directory', default=None, required=False)
+    optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=3, required=False)
+    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, required=False)
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "standingStill": 1, "walking/running": 2}', required=False)
+    optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
+    parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
 
-    if args.gt3x_dir is None:
-        raise Exception('Please provide a value for the --gt3x-dir option!')
-    if args.pre_processed_dir is None:
-        raise Exception('Please provide a value for the --pre-processed-dir option!')
+    if not os.path.exists(args.pre_processed_dir):
+        os.makedirs(args.pre_processed_dir)
+
+    label_map = json.loads(args.activpal_label_map)
 
     for fname in os.listdir(args.gt3x_dir):
         if fname.endswith('.csv'):
             user_id = fname.split(".")[0]
-            extract_features(args.gt3x_dir, args.activpal_dir, args.pre_processed_dir, user_id)
-            print('Completed pre-processing data for subject: {}'.format(user_id))
+            extract_features(args.gt3x_dir, args.activpal_dir, args.pre_processed_dir, user_id, args.window_size, args.gt3x_frequency, label_map)
+            if not args.silent:
+                print('Completed pre-processing data for subject: {}'.format(user_id))
