@@ -1,3 +1,19 @@
+
+# Copyright 2020 Supun Nakandala. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 import os
 import time
 import json
@@ -7,8 +23,11 @@ from datetime import timedelta, datetime
 import argparse
 
 
-def mode(lst):
-    return max(set(lst), key=lst.count)
+def filter_labels(x):
+    if len(set(x)) == 1:
+        return x[0]
+    else:
+        return -1
 
 
 def preprocess_raw_data(gt3x_dir, activpal_dir, user_id, gt3x_frequency, label_map):
@@ -89,8 +108,10 @@ def extract_windows(original_df, window_size):
         temp = pd.concat([temp, temp2], axis=1)[:-1]
 
         if 'Behavior' in original_df.columns:
-            temp2 = group["Behavior"].resample(str(window_size)+'s', base=group.iloc[0][2].second).apply(lambda x: mode(x.values.tolist()))
+            temp2 = group["Behavior"].resample(str(window_size)+'s', base=group.iloc[0][2].second).apply(lambda x: filter_labels(x.values.tolist()))
             temp = pd.concat([temp, temp2], axis=1)[:-1]
+            # Remove time windows with more than one label
+            temp = temp[temp["Behavior"] >= 0]
 
         temp["User"] = user
         temp["Segment"] = segment
@@ -127,8 +148,8 @@ if __name__ == "__main__":
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
     optional_arguments.add_argument('--activpal-dir', help='ActivPAL data directory', default=None, required=False)
-    optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=3, required=False)
-    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, required=False)
+    optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=3, type=int, required=False)
+    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
     optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "standingStill": 1, "walking/running": 2}', required=False)
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
