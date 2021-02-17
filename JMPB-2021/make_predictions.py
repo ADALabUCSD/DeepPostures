@@ -20,9 +20,6 @@ import numpy as np
 import tensorflow as tf
 import argparse
 
-
-tf.compat.v1.disable_eager_execution()
-
 sys.path.append('./')
 from commons import cnn_model, data_generator
 
@@ -91,9 +88,5 @@ if __name__ == "__main__":
                 df = df[['Time', 'Prediction']]
             else:
                 df = df[['Time', 'Label', 'Prediction']]
-                
 
             df.to_csv(os.path.join(args.predictions_dir, '{}.csv'.format(subject_id)), index=False)
-    
-        
-    
