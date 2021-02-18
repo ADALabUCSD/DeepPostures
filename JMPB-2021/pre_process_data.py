@@ -1,4 +1,3 @@
-
 # Copyright 2020 Supun Nakandala. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -150,7 +149,7 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--activpal-dir', help='ActivPAL data directory', default=None, required=False)
     optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=3, type=int, required=False)
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
-    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "standingStill": 1, "walking/running": 2}', required=False)
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "standing": 1, "stepping": 2}', required=False)
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
