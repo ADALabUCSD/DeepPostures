@@ -15,6 +15,7 @@
 
 import os
 import sys
+import json
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -35,6 +36,7 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=3, type=int, required=False)
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
     optional_arguments.add_argument('--no-label', help='Whether to not output the label', default=False, required=False, action='store_true')
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "standing": 1, "stepping": 2}', required=False)
     optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default='./pre-trained-model', required=False)
     optional_arguments.add_argument('--remove-gravity', help='Whether to remove gravity from accelerometer data', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
@@ -46,6 +48,9 @@ if __name__ == "__main__":
 
     subject_ids = [fname.split('.')[0] for fname in os.listdir(args.pre_processed_dir) if fname.endswith('.bin')]
     
+    label_map = json.loads(args.activpal_label_map)
+    label_map = {label_map[k]:k for k in label_map}
+
     in_size = args.gt3x_frequency * args.window_size
     iterator =  tf.data.Iterator.from_structure((tf.float32, tf.int32, tf.string), ((None, 1, in_size, 3), (None, 1), (None)))
     iterator_init_ops = []
@@ -81,12 +86,15 @@ if __name__ == "__main__":
                 except tf.errors.OutOfRangeError:
                     break
 
-            df = pd.DataFrame({'Time': ts, 'Label': ys, 'Prediction': ps})
+            label_string = "ActivPAL activity (" + ",".join(['{}={}'.format(i, label_map[i]) for i in range(len(label_map))]) + ",-1=missing ActivPAL)"
+            prediction_string = "Predicted activity (" + ",".join(['{}={}'.format(i, label_map[i]) for i in range(len(label_map))]) + ")"
+            df = pd.DataFrame({'Time': ts, label_string: ys, prediction_string: ps})
+            
             df['Time'] = df['Time'].str.decode("utf-8")
             
             if args.no_label:
-                df = df[['Time', 'Prediction']]
+                df = df[['Time', label_string]]
             else:
-                df = df[['Time', 'Label', 'Prediction']]
+                df = df[['Time', label_string, prediction_string]]
 
             df.to_csv(os.path.join(args.predictions_dir, '{}.csv'.format(subject_id)), index=False)
