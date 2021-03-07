@@ -107,5 +107,42 @@ Complete usage details of this script are as follows:
 ## Generating Predictions
 You can use the released pre-trained models to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
 
-    python make_predictions.py --pre-processed-dir <pre-processed-dir> --predictions-dir <predictions-dir>
+    usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
+                           [--model {a,b,c,ensemble}]
+                           [--predictions-dir PREDICTIONS_DIR]
+                           [--gt3x-frequency GT3X_FREQUENCY]
+                           [--window-size WINDOW_SIZE]
+                           [--model-lstm-window-sizes MODEL_LSTM_WINDOW_SIZES]
+                           [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
+                           [--activpal-label-map ACTIVPAL_LABEL_MAP]
+                           [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
+                           [--no-segment] [--silent]
+
+    Argument parser for generating model predictions.
+
+    required arguments:
+    --pre-processed-dir PRE_PROCESSED_DIR
+                            Pre-processed data directory
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --model {a,b,c,ensemble}
+                            Prediction model name
+    --predictions-dir PREDICTIONS_DIR
+                            Training batch size
+    --gt3x-frequency GT3X_FREQUENCY
+                            GT3X device frequency in Hz
+    --window-size WINDOW_SIZE
+                            Window size in seconds on which the predictions to be
+                            made
+    --model-lstm-window-sizes MODEL_LSTM_WINDOW_SIZES
+                            Model LSTM window sizes in minutes
+    --down-sample-frequency DOWN_SAMPLE_FREQUENCY
+                            Downsample frequency in Hz for GT3X data
+    --activpal-label-map ACTIVPAL_LABEL_MAP
+                            ActivPal label vocabulary
+    --model-checkpoint-path MODEL_CHECKPOINT_PATH
+                            Path where the trained model will be saved
+    --no-segment          Do not output segment number
+    --silent              Whether to hide info messages
 
