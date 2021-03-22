@@ -37,7 +37,7 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
     optional_arguments.add_argument('--no-label', help='Whether to not output the label', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "standing": 1, "stepping": 2}', required=False)
-    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default='./pre-trained-model', required=False)
+    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models'), required=False)
     optional_arguments.add_argument('--remove-gravity', help='Whether to remove gravity from accelerometer data', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
