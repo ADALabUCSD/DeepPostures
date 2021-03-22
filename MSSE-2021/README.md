@@ -108,15 +108,15 @@ Complete usage details of this script are as follows:
 You can use the released pre-trained models to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
 
     usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                           [--model {a,b,c,ensemble}]
-                           [--predictions-dir PREDICTIONS_DIR]
-                           [--gt3x-frequency GT3X_FREQUENCY]
-                           [--window-size WINDOW_SIZE]
-                           [--model-lstm-window-sizes MODEL_LSTM_WINDOW_SIZES]
-                           [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
-                           [--activpal-label-map ACTIVPAL_LABEL_MAP]
-                           [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
-                           [--no-segment] [--silent]
+                            [--model {CHAP_ACT_1,CHAP_ACT_2,CHAP_ACT_3,CHAP_ACT,CHAP_ACT_AUSDIAB}]
+                            [--predictions-dir PREDICTIONS_DIR]
+                            [--gt3x-frequency GT3X_FREQUENCY]
+                            [--window-size WINDOW_SIZE]
+                            [--model-lstm-window-sizes MODEL_LSTM_WINDOW_SIZES]
+                            [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
+                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
+                            [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
+                            [--no-segment] [--silent]
 
     Argument parser for generating model predictions.
 
@@ -126,7 +126,7 @@ You can use the released pre-trained models to generate predictions using your o
 
     optional arguments:
     -h, --help            show this help message and exit
-    --model {a,b,c,ensemble}
+    --model {CHAP_ACT_1,CHAP_ACT_2,CHAP_ACT_3,CHAP_ACT,CHAP_ACT_AUSDIAB}
                             Prediction model name
     --predictions-dir PREDICTIONS_DIR
                             Training batch size
@@ -145,4 +145,3 @@ You can use the released pre-trained models to generate predictions using your o
                             Path where the trained model will be saved
     --no-segment          Do not output segment number
     --silent              Whether to hide info messages
-
