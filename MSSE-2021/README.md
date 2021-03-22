@@ -175,7 +175,6 @@ You can use the released pre-trained models to generate predictions using your o
     --no-segment          Do not output segment number
     --silent              Whether to hide info messages
 
-<br/>
 We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ACT_AUSDIAB` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
 | Model                                               | Training Dataset    |
@@ -184,7 +183,7 @@ We currently support several pre-trained models that can be used to generate pre
 |CHAP_ACT_1                                           | ACT                 |
 |CHAP_ACT_2                                           | ACT                 |
 |CHAP_ACT_3                                           | ACT                 |
-|CHAP_ACT (enseble of ACT_1, ACT_2, and ACT_3)        | ACT                 |
+|CHAP_ACT (ensemble of ACT_1, ACT_2, and ACT_3)        | ACT                 |
 
 |Training Dataset | Description                                             |
 |-----------------|---------------------------------------------------------|
