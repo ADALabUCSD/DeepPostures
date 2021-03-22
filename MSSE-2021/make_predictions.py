@@ -175,7 +175,7 @@ if __name__ == "__main__":
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
-    optional_arguments.add_argument('--model', help='Prediction model name', default='CHAP_ACT_AUSDIAB', required=False, choices=['CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT', 'CHAP_ACT_AUSDIAB'])
+    optional_arguments.add_argument('--model', help='Prediction model name (default: CHAP_ACT_AUSDIAB)', default='CHAP_ACT_AUSDIAB', required=False, choices=['CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT', 'CHAP_ACT_AUSDIAB'])
     optional_arguments.add_argument('--predictions-dir', help='Training batch size', default='./predictions', required=False)
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
     optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=10, type=int, required=False)

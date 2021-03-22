@@ -34,7 +34,7 @@ You must be running on Python 3 with the following python packages installed. We
     -0.179,-0.182,0.959
     ~~~
 
-- **Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for each subject. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
+- **Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
     ~~~
     ID,Date.Valid.Day
@@ -47,7 +47,7 @@ You must be running on Python 3 with the following python packages installed. We
     156976,1/25/2018
     ~~~
 
-- **(Optional) Sleep Logs File**: A .csv file indicating sleep records for each subjects. Each row is tuple of subject id, date went to bed, time went to bed, data came out of bed, and time went out of bed. The header should be of the form `ID,Date.In.Bed,Time.In.Bed,Date.Out.Bed,Time.Out.Bed`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
+- **(Optional) Sleep Logs File**: A .csv file indicating sleep records for all subjects. Each row is tuple of subject id, date went to bed, time went to bed, data came out of bed, and time went out of bed. The header should be of the form `ID,Date.In.Bed,Time.In.Bed,Date.Out.Bed,Time.Out.Bed`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
 
 
     ~~~
@@ -57,7 +57,7 @@ You must be running on Python 3 with the following python packages installed. We
     33333,4/30/2016,21:00,5/1/2016,8:00
     ~~~
 
-- **(Optional) Non-wear Times File**: A .csv file indicating non-wear bouts for each subject. Non-wear bouts can be obtained using CHOI method or something else. Each row is a tuple of subject id, non-wear bout start date, start time, end date, and end time. The header should be of the form `ID,Date.Nw.Start,Time.Nw.Start,Date.Nw.End,Time.Nw.End`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
+- **(Optional) Non-wear Times File**: A .csv file indicating non-wear bouts for all subjects. Non-wear bouts can be obtained using CHOI method or something else. Each row is a tuple of subject id, non-wear bout start date, start time, end date, and end time. The header should be of the form `ID,Date.Nw.Start,Time.Nw.Start,Date.Nw.End,Time.Nw.End`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
   
     ~~~
     ID,Date.Nw.Start,Time.Nw.Start,Date.Nw.End,Time.Nw.End
@@ -66,7 +66,7 @@ You must be running on Python 3 with the following python packages installed. We
     33333,4/29/2016,22:00,4/30/2016,6:00
     ~~~
 
-- **(Optional) Events Data**: Optionally, you can also provide ActivPal events data, especially if you wish to train your own models, for each subjects as a single .csv file. These files should also be named in the **<subject_id>.csv** format and files for all subjects should be put in the same directory. Date values should be formatted in `%Y-%m-%d` format and time values should be formatted in `%H:%M:%S` format. First few lines of a sample csv file are as follows:
+- **(Optional) Events Data**: Optionally, you can also provide ActivPal events data-especially if you wish to train your own models-for each subject as a single .csv file. These files should also be named in the **<subject_id>.csv** format and files for all subjects should be put in the same directory. Date values should be formatted in `%Y-%m-%d` format and time values should be formatted in `%H:%M:%S` format. The first few lines of a sample csv file are as follows:
     ~~~
     StartTime,EndTime,Behavior
     2014-05-07 09:47:23,2014-05-07 09:48:21,sitting
