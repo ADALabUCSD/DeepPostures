@@ -182,7 +182,7 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--model-lstm-window-sizes', help='Model LSTM window sizes in minutes', default='{"a": 9, "b": 9, "c": 7}', required=False)
     optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data', default=10, type=int, required=False)
     optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "not-sitting": 1}', required=False)
-    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default='./pre-trained-models', required=False)
+    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models'), required=False)
     optional_arguments.add_argument('--no-segment', help='Do not output segment number', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
