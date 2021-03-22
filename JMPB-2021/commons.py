@@ -37,12 +37,12 @@ def remove_gravity(acc, gt3x_frequency):
     return np.expand_dims(acc, axis=0)
 
 
-def data_generator(pre_processed_dir, subjects, gt3x_frequency, remove_gravity, include_time=False):
+def data_generator(pre_processed_dir, subjects, gt3x_frequency, is_remove_gravity, include_time=False):
     for i in subjects:
         temp = pd.read_pickle(os.path.join(pre_processed_dir, str(i)+".bin"))
 
         acc = temp[["Accelerometer"]].values.tolist()
-        if remove_gravity:
+        if is_remove_gravity:
             acc = [remove_gravity(x, gt3x_frequency) for x in acc]
         timestamps = pd.to_datetime(temp.Time).dt.strftime('%Y-%m-%d %H:%M:%S').values.tolist()
         if 'Behavior' in temp.columns:
