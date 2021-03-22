@@ -34,10 +34,10 @@ You must be running on Python 3 with the following python packages installed. We
     -0.179,-0.182,0.959
     ~~~
 
-- **Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for each subject. Each row is subject id, date pair. The header should be of the from `ID,Date.valid.day`. A sample valid days file is shown below.
+- **Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for each subject. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
     ~~~
-    ID,Date.valid.day
+    ID,Date.Valid.Day
     156976,1/19/2018
     156976,1/20/2018
     156976,1/21/2018
@@ -45,6 +45,35 @@ You must be running on Python 3 with the following python packages installed. We
     156976,1/23/2018
     156976,1/24/2018
     156976,1/25/2018
+    ~~~
+
+- **(Optional) Sleep Logs File**: A .csv file indicating sleep records for each subjects. Each row is tuple of subject id, date went to bed, time went to bed, data came out of bed, and time went out of bed. The header should be of the form `ID,Date.In.Bed,Time.In.Bed,Date.Out.Bed,Time.Out.Bed`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
+
+
+    ~~~
+    ID,Date.In.Bed,Time.In.Bed,Date.Out.Bed,Time.Out.Bed
+    33333,4/28/2016,22:00,4/29/2016,10:00
+    33333,4/29/2016,22:00,4/30/2016,9:00
+    33333,4/30/2016,21:00,5/1/2016,8:00
+    ~~~
+
+- **(Optional) Non-wear Times File**: A .csv file indicating non-wear bouts for each subject. Non-wear bouts can be obtained using CHOI method or something else. Each row is a tuple of subject id, non-wear bout start date, start time, end date, and end time. The header should be of the form `ID,Date.Nw.Start,Time.Nw.Start,Date.Nw.End,Time.Nw.End`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
+  
+    ~~~
+    ID,Date.Nw.Start,Time.Nw.Start,Date.Nw.End,Time.Nw.End
+    33333,4/27/2016,21:30,4/28/2016,6:15
+    33333,4/28/2016,20:40,4/29/2016,5:58
+    33333,4/29/2016,22:00,4/30/2016,6:00
+    ~~~
+
+- **(Optional) Events Data**: Optionally, you can also provide ActivPal events data, especially if you wish to train your own models, for each subjects as a single .csv file. These files should also be named in the **<subject_id>.csv** format and files for all subjects should be put in the same directory. Date values should be formatted in `%Y-%m-%d` format and time values should be formatted in `%H:%M:%S` format. First few lines of a sample csv file are as follows:
+    ~~~
+    StartTime,EndTime,Behavior
+    2014-05-07 09:47:23,2014-05-07 09:48:21,sitting
+    2014-05-07 09:48:22,2014-05-07 09:48:26,standing
+    2014-05-07 09:48:27,2014-05-07 09:49:03,stepping
+    2014-05-07 09:49:04,2014-05-07 09:49:04,standing
+    2014-05-07 09:49:05,2014-05-07 09:49:11,sitting
     ~~~
 
 ## Pre-Processing Data
@@ -145,3 +174,19 @@ You can use the released pre-trained models to generate predictions using your o
                             Path where the trained model will be saved
     --no-segment          Do not output segment number
     --silent              Whether to hide info messages
+
+<br/>
+We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ACT_AUSDIAB` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
+
+| Model                                               | Training Dataset    |
+|-----------------------------------------------------|---------------------|
+|CHAP_ACT_AUSDIAB (default and recommended)           | ACT + AUSDIAB       |
+|CHAP_ACT_1                                           | ACT                 |
+|CHAP_ACT_2                                           | ACT                 |
+|CHAP_ACT_3                                           | ACT                 |
+|CHAP_ACT (enseble of ACT_1, ACT_2, and ACT_3)        | ACT                 |
+
+|Training Dataset | Description                                             |
+|-----------------|---------------------------------------------------------|
+|ACT              | ACT dataset is an older adult dataset collected from ...|
+|AUSDIAB          |                                                         | 
