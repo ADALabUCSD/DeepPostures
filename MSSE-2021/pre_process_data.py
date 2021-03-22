@@ -158,7 +158,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, sleep_l
             if line == "":
                 continue
 
-            splits = lines[1].split(",")
+            splits = line.split(",")
             id = splits[0].strip()
             d = splits[1].strip()
             try:
