@@ -1,0 +1,2 @@
+model_checkpoint_path: "/data/niddk/exps/phase5_redo/10-19-20/checkpoints/12_2at1ly9w169r37r8ek5q5ba6dffmyrfy/model"
+all_model_checkpoint_paths: "/data/niddk/exps/phase5_redo/10-19-20/checkpoints/12_2at1ly9w169r37r8ek5q5ba6dffmyrfy/model"
