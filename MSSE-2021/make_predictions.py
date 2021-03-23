@@ -35,7 +35,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def generate_predictions(pre_processed_data_dir, output_dir, model, segment, label_map, downsample_window, model_lstm_window_sizes, cnn_window_size,
+def generate_predictions(pre_processed_data_dir, output_dir, model, segment, output_label, label_map, downsample_window, bi_lstm_window_sizes, cnn_window_size,
     gt3x_frequency, model_ckpt_path):
     """
     Function to generate the activity predictions for pre-precessed data. Predictions will be written out to the given
@@ -44,23 +44,21 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, lab
     :param output_dir: Path to the output data directory where the predictions will be stored
     :param model: Which model to use. Avaialble options: 'CHAP_ACT,' 'CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3' and 'CHAP_ACT_AUSDIAB' (default: 'CHAP_ACT_AUSDIAB').
     :param segment: Whether to output the segment number.
+    :param output_label: Whether to output the actual label.
     :param label_map: Human readable label name map for predicted index.
     :param downsample_window: Downsample window size for GT3X data.
-    :param model_lstm_window_sizes: Model LSTM window sizes in minutes.
+    :param bi_lstm_window_sizes: BiLSTM window sizes in minutes.
     :cnn_window_size: Window size of the CNN model in seconds.
     :gt3x_frequency: GT3X frequency.
     :model_ckpt_path: Path to the model checkpoints directory.
     """
 
     model = model.strip()
-    print(model)
-    if model not in ['CHAP_ACT', 'CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT_AUSDIAB']:
-        raise Exception('model should be one of: CHAP_ACT, CHAP_ACT_1, CHAP_ACT_2, CHAP_ACT_3, or CHAP_ACT_AUSDIAB')
+    if model not in ['CHAP_ACT', 'CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT_AUSDIAB', 'CUSTOM_MODEL']:
+        raise Exception('model should be one of: CHAP_ACT, CHAP_ACT_1, CHAP_ACT_2, CHAP_ACT_3, CHAP_ACT_AUSDIAB, or CUSTOM_MODEL')
 
     subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir)]
 
-    # window size for each model in minutes
-    model_window_sizes = model_lstm_window_sizes
 
     perform_ensemble = False
     if model == 'CHAP_ACT':
@@ -80,37 +78,47 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, lab
 
         for subject_id in subject_ids:
             data = list(input_iterator(pre_processed_data_dir, subject_id))
-            x, timestamps = [d[0].reshape(-1, int(1/downsample_window * cnn_window_size),
-                                          int(gt3x_frequency*downsample_window), 1) for d in data], [d[1] for d in data]
+            x, timestamps, labels = [d[0].reshape(-1, int(1/downsample_window * cnn_window_size),
+                                          int(gt3x_frequency*downsample_window), 1) for d in data], [d[1] for d in data], [d[2] for d in data]
 
             fout = open(os.path.join(output_dir, "{}".format(model), "{}.csv".format(subject_id)), 'w')
 
             if segment:
                 fout.write('segment,')
-            fout.write('timestamp,prediction\n')
+            fout.write('timestamp')
+            if output_label:
+                fout.write(',label')
+    
+            fout.write(',prediction\n')
 
             for n in range(len(x)):
-                border = x[n].shape[0] % (model_window_sizes[model] * int(60*downsample_window))
+                border = x[n].shape[0] % (bi_lstm_window_sizes[model] * int(60*downsample_window))
                 if border != 0:
                     x[n] = x[n][:-border]
                     timestamps[n] = timestamps[n][:-border]
+                    labels[n] = labels[n][:-border]
 
                 y_pred = []
-                for k in range(0, x[n].shape[0], model_window_sizes[model] * int(60*downsample_window)):
-                    temp = x[n][k:k + model_window_sizes[model] * int(60*downsample_window)]
+                for k in range(0, x[n].shape[0], bi_lstm_window_sizes[model] * int(60*downsample_window)):
+                    temp = x[n][k:k + bi_lstm_window_sizes[model] * int(60*downsample_window)]
                     y_pred.append(sess.run('output:0', feed_dict={'input:0': temp}).flatten())
 
                 y_pred = np.array(y_pred).flatten()
-                for t, pred in zip(timestamps[n], y_pred):
+                for t, l, pred in zip(timestamps[n], labels[n], y_pred):
                     formatstr = ""
                     if segment:
-                        formatstr += "{},{},{}"
-                        values = [n, datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S"), label_map[int(pred)]]
-                    else:
                         formatstr += "{},{}"
-                        values = [datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S"), label_map[int(pred)]]
+                        values = [n, datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")]
+                    else:
+                        formatstr += "{}"
+                        values = [datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")]
 
-                    formatstr += "\n"
+                    if output_label:
+                        formatstr += ",{}"
+                        values.append(label_map[int(l)])    
+
+                    formatstr += ",{}\n"
+                    values.append(label_map[int(pred)])
 
                     fout.write(formatstr.format(*values))
 
@@ -175,15 +183,19 @@ if __name__ == "__main__":
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
-    optional_arguments.add_argument('--model', help='Prediction model name (default: CHAP_ACT_AUSDIAB)', default='CHAP_ACT_AUSDIAB', required=False, choices=['CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT', 'CHAP_ACT_AUSDIAB'])
-    optional_arguments.add_argument('--predictions-dir', help='Training batch size', default='./predictions', required=False)
-    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
-    optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=10, type=int, required=False)
-    optional_arguments.add_argument('--model-lstm-window-sizes', help='Model LSTM window sizes in minutes', default='{"CHAP_ACT_1": 9, "CHAP_ACT_2": 9, "CHAP_ACT_3": 7, "CHAP_ACT_AUSDIAB": 7}', required=False)
-    optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data', default=10, type=int, required=False)
-    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "not-sitting": 1}', required=False)
-    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models'), required=False)
+    optional_arguments.add_argument('--model', help='Pre-trained prediction model name (default: CHAP_ACT_AUSDIAB)', default='CHAP_ACT_AUSDIAB', required=False, choices=['CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT', 'CHAP_ACT_AUSDIAB'])
+    optional_arguments.add_argument('--predictions-dir', help='Training batch size', default='./predictions', required=False) 
     optional_arguments.add_argument('--no-segment', help='Do not output segment number', default=False, required=False, action='store_true')
+    optional_arguments.add_argument('--output-label', help='Whether to output the actual label', default=False, required=False, action='store_true')
+
+    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the custom trained model checkpoint is located', default=None, required=False)
+    optional_arguments.add_argument('--cnn-window-size', help='CNN window size of the model in seconds on which the predictions to be made (default: 10).', default=10, type=int, required=False)
+    optional_arguments.add_argument('--bi-lstm-window-size', help='BiLSTM window size in minutes (default: 7).', default=7, required=False)
+    optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data (default: 10).', default=10, type=int, required=False)   
+    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz (default: 30)', default=30, type=int, required=False)
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "not-sitting": 1, "no-label": -1}', required=False)
+    
+    
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
@@ -194,9 +206,17 @@ if __name__ == "__main__":
     label_map = json.loads(args.activpal_label_map)
     label_map = {label_map[k]:k for k in label_map}
 
-    model_lstm_window_sizes = json.loads(args.model_lstm_window_sizes)
+    bi_lstm_window_sizes = {"CHAP_ACT_1": 9, "CHAP_ACT_2": 9, "CHAP_ACT_3": 7, "CHAP_ACT_AUSDIAB": 7}
+    bi_lstm_window_sizes['CUSTOM_MODEL'] = args.bi_lstm_window_size
 
-    generate_predictions(args.pre_processed_dir, output_dir=args.predictions_dir, model=args.model, segment=not args.no_segment,
-        label_map=label_map, downsample_window=1.0/args.down_sample_frequency, model_lstm_window_sizes=model_lstm_window_sizes,
-        cnn_window_size=args.window_size, gt3x_frequency=args.gt3x_frequency, model_ckpt_path=args.model_checkpoint_path)
+    if args.model_checkpoint_path is not None:
+        if not args.silent:
+            print('Loading custom model from checkpoint path: {}'.format(args.model_checkpoint_path))
+        args.model = 'CUSTOM_MODEL'
+    else:
+        args.model_checkpoint_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models')
+
+    generate_predictions(args.pre_processed_dir, output_dir=args.predictions_dir, model=args.model, segment=not args.no_segment, output_label=args.output_label,
+        label_map=label_map, downsample_window=1.0/args.down_sample_frequency, bi_lstm_window_sizes=bi_lstm_window_sizes,
+        cnn_window_size=args.cnn_window_size, gt3x_frequency=args.gt3x_frequency, model_ckpt_path=args.model_checkpoint_path)
 

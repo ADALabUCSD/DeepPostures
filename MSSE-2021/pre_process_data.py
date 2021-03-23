@@ -18,6 +18,7 @@ import time
 import os
 import gc
 import h5py
+import json
 import logging
 import pandas as pd
 import numpy as np
@@ -38,6 +39,7 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
     data_values = []
     sleeping_values = []
     non_wear_values = []
+    label_values = []
     for j in range(int(CNN_WINDOW_SIZE / RESOLUTION), len(values_being_written) + 1, int(CNN_WINDOW_SIZE / RESOLUTION)):
         temp = values_being_written[j - int(CNN_WINDOW_SIZE / RESOLUTION):j]
         time_values.append(
@@ -45,6 +47,7 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
         data_values.append([[x[1], x[2], x[3]] for x in temp])
         non_wear_values.append(mode([x[4] for x in temp])[0][0])
         sleeping_values.append(mode([x[5] for x in temp])[0][0])
+        label_values.append(mode([x[6] for x in temp])[0][0])
 
     # flush data, free memory
     h5f_out = h5py.File(subject_data_file_path, "w")
@@ -52,10 +55,11 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
     h5f_out.create_dataset('data', data=np.array(data_values), chunks=True, maxshape=(None,100,3))
     h5f_out.create_dataset('non_wear', data=np.array(non_wear_values), chunks=True, maxshape=(None,))
     h5f_out.create_dataset('sleeping', data=np.array(sleeping_values), chunks=True, maxshape=(None,))
+    h5f_out.create_dataset('label', data=np.array(label_values), chunks=True, maxshape=(None,))
     h5f_out.close()
 
 
-def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id):
+def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map):
     RESOLUTION = 1/float(args.down_sample_frequency) # seconds
     GT3X_FREQUENCY = args.gt3x_frequency  # Hz
     CNN_WINDOW_SIZE = args.window_size  # seconds
@@ -79,6 +83,27 @@ def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dic
         else:
             return 0
 
+    if ap_df is not None:
+        ap_df['Time'] = ap_df['Time'].map(lambda x: datetime.utcfromtimestamp(round((x - 25569.) * 86400 * 10) / 10.))
+        event_start_times = ap_df['Time'].tolist()
+        ap_df['Interval (s)'] = ap_df['Interval (s)'].map(lambda x: timedelta(seconds=round(x * 10) / 10.))
+        event_intervals = ap_df['Interval (s)'].tolist()
+        event_labels = ap_df['ActivityCode (0=sedentary, 1= standing, 2=stepping)'].apply(lambda x: label_map[str(x)]).tolist()
+
+    def check_label(pointer, check_time):
+        if ap_df is None:
+            return pointer, -1
+
+        while pointer < len(event_start_times):
+            if check_time < event_start_times[pointer]:
+                return pointer, -1
+            if event_start_times[pointer] <= check_time <= event_start_times[pointer] + event_intervals[pointer]:
+                return pointer, event_labels[pointer]
+
+            pointer += 1
+        return pointer, -1
+
+
     if not os.path.exists(os.path.join(pre_process_data_output_dir, subject_id)):
         os.makedirs(os.path.join(pre_process_data_output_dir, subject_id))
 
@@ -87,14 +112,13 @@ def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dic
     current_time = datetime.strptime(start_time, "%m/%d/%Y %H:%M:%S")
     unflushed_start_date = current_time.date()
     lines = [x[:-1] for x in gt3x_lines[11:]]
+    pointer = 0
     for i in range(0, len(lines), int(GT3X_FREQUENCY * RESOLUTION)):
-        acc = np.array(
-            [[float(x) for x in l.split(',')] for l in lines[i:i + int(GT3X_FREQUENCY * RESOLUTION)]])
+        acc = np.array([[float(x) for x in l.split(',')] for l in lines[i:i + int(GT3X_FREQUENCY * RESOLUTION)]])
         acc = np.mean(acc, axis=0)
         next_time = current_time + timedelta(seconds=RESOLUTION)
-        values.append(
-            [current_time, acc[0], acc[1], acc[2], check_non_wear(subject_id, current_time),
-                check_sleeping(subject_id, current_time)])
+        pointer, label = check_label(pointer, current_time)
+        values.append([current_time, acc[0], acc[1], acc[2], check_non_wear(subject_id, current_time), check_sleeping(subject_id, current_time), label])
         current_time = next_time
 
         # Flush all values for a single day
@@ -113,14 +137,16 @@ def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dic
 
 
 
-def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, sleep_logs_file=None, non_wear_times_file=None,
+def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_map, sleep_logs_file=None, non_wear_times_file=None, activpal_events_csv_dir_root=None,
                                 n_start_ID=None, n_end_ID=None, expression_after_ID=None, pre_process_data_output_dir='./pre-processed'):
     """
     Utility function to generate pre-processed files from input data files that can be fed to the ML models.
     :param gt3x_30Hz_csv_dir_root: Path to the directory containing 30Hz GT3X CSV data.
     :param valid_days_file: Path to the valid days file.
+    :param label_map: ActivPal label transormation map.
     :param sleep_logs_file: (Optional) Path to the sleep logs file.
     :param non_wear_times_file: (Optional) Path to non wear times file.
+    :param activpal_events_csv_dir_root: (Optional) Path to the directory containing ActivPal events CSV data.
     :param n_start_ID: (Optional) The index of the starting character of the ID in gt3x file names. Indexing starts with 1.
                         If specified `n_end_ID` should also be specified. I both `n_start_ID` and `expression_after_ID` is
                         specified, the latter will be ignored.
@@ -295,7 +321,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, sleep_l
             raise Exception('Did not find valid days records for the subject {}'.format(subject_id))
 
     for subject_id, file_name in zip(subject_ids, gt3x_file_names):
-        with open(gt3x_30Hz_csv_dir_root + "/" + file_name + ".csv") as fin:
+        with open(os.path.join(gt3x_30Hz_csv_dir_root, '{}.csv'.format(file_name))) as fin:
             if len(non_wear_dict) > 0 and subject_id not in non_wear_dict:
                 logger.warn('Did not find non-wear records for the subject {}'.format(subject_id))
             if len(sleep_logs_dict) > 0 and subject_id not in sleep_logs_dict:
@@ -303,7 +329,13 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, sleep_l
 
             logger.info('Starting pre-processing for the subject {}'.format(subject_id))
             gt3x_lines = fin.readlines()
-            map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id)
+
+            if activpal_events_csv_dir_root:
+                ap_df = pd.read_csv(os.path.join(activpal_events_csv_dir_root, '{}.csv'.format(file_name)))
+            else:
+                ap_df = None
+
+            map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
             logger.info('Completed pre-processing for the subject {}'.format(subject_id))
 
 
@@ -317,6 +349,7 @@ if __name__ == "__main__":
     
     optional_arguments.add_argument('--sleep-logs-file', help='Path to the sleep logs file', required=False)
     optional_arguments.add_argument('--non-wear-times-file', help='Path to non wear times file', required=False)
+    required_arguments.add_argument('--activpal-dir', help='ActivPAL data directory',  default=None, required=False)
     optional_arguments.add_argument('--n-start-id', help='The index of the starting character of the ID in gt3x file names. Indexing starts with 1. \
                         If specified `n_end_ID` should also be specified. I both `n_start_ID` and `expression_after_ID` is \
                         specified, the latter will be ignored', type=int, required=False)
@@ -327,6 +360,7 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=10, type=int, required=False)
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
     optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data', default=10, type=int, required=False)
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"0": 0, "1": 1, "2": 1}', required=False)
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
@@ -334,6 +368,8 @@ if __name__ == "__main__":
     if not os.path.exists(args.pre_processed_dir):
         os.makedirs(args.pre_processed_dir)
 
-    generate_pre_processed_data(args.gt3x_dir, args.valid_days_file, sleep_logs_file=args.sleep_logs_file, non_wear_times_file=args.non_wear_times_file,
+    label_map = json.loads(args.activpal_label_map)
+    generate_pre_processed_data(args.gt3x_dir, args.valid_days_file, label_map, sleep_logs_file=args.sleep_logs_file, non_wear_times_file=args.non_wear_times_file,
+                                activpal_events_csv_dir_root=args.activpal_dir,
                                 n_start_ID=args.n_start_id, n_end_ID=args.n_end_id, expression_after_ID=args.expression_after_id,
                                 pre_process_data_output_dir=args.pre_processed_dir)

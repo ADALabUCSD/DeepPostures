@@ -181,8 +181,8 @@ Complete usage details of this script are as follows:
     --remove-gravity      Whether to remove gravity from accelerometer data
     --silent              Whether to hide info messages
 
-Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and number of training epochs etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
+**Model Selection:** Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and number of training epochs etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
 
-After training your own model you can use it to generate predictions by passing the model checkpoint path to the `make_predictions.py` script as follows:
+**Generating Prediction using a Custom Model:** After training your own model you can use it to generate predictions by passing the model checkpoint path to the `make_predictions.py` script as follows:
 
     python make_predictions.py --pre-processed-dir <pre-processed-dir> --predictions-dir <predictions-dir> --model-checkpoint-path <checkpoint-dir>
