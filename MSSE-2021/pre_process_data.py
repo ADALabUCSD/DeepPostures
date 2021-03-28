@@ -278,7 +278,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
         if n_end_ID is None or not isinstance(n_start_ID, int) or n_start_ID > n_end_ID:
             raise Exception('When n_start_ID is specified n_end_ID should also be specified. n_end_ID should be'
                             ' an integer greater than n_start_ID.')
-        if expression_after_ID is not None:
+        if expression_after_ID is not None and not args.silent:
             logger.warn('Both n_start_ID and expression_after_ID specified. expression_after_ID will be ignored.')
     elif expression_after_ID is not None:
         if not isinstance(expression_after_ID, str) and \
@@ -309,7 +309,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                 if len(splits) > 1:
                     x_new = splits[0]
                     break
-            if x_new == x:
+            if x_new == x and not args.silent:
                 logger.warn('expression_after_ID based splitting resulted no change for the gt3x file name: {}.csv'.format(x))
             subject_ids.append(x_new)
     else:
@@ -321,12 +321,13 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
 
     for subject_id, file_name in zip(subject_ids, gt3x_file_names):
         with open(os.path.join(gt3x_30Hz_csv_dir_root, '{}.csv'.format(file_name))) as fin:
-            if len(non_wear_dict) > 0 and subject_id not in non_wear_dict:
+            if len(non_wear_dict) > 0 and subject_id not in non_wear_dict and not args.silent:
                 logger.warn('Did not find non-wear records for the subject {}'.format(subject_id))
-            if len(sleep_logs_dict) > 0 and subject_id not in sleep_logs_dict:
+            if len(sleep_logs_dict) > 0 and subject_id not in sleep_logs_dict and not args.silent:
                 logger.warn('Did not find sleep log records for the subject {}'.format(subject_id))
 
-            logger.info('Starting pre-processing for the subject {}'.format(subject_id))
+            if not args.silent:
+                logger.info('Starting pre-processing for the subject {}'.format(subject_id))
             gt3x_lines = fin.readlines()
 
             if activpal_events_csv_dir_root:
@@ -335,7 +336,8 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                 ap_df = None
 
             map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
-            logger.info('Completed pre-processing for the subject {}'.format(subject_id))
+            if not args.silent:
+                logger.info('Completed pre-processing for the subject {}'.format(subject_id))
 
 
 if __name__ == "__main__":
