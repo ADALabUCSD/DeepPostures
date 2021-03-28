@@ -32,7 +32,7 @@ np.random.seed(2019)
 
 
 def get_train_ops(y, logits, learning_rate, n_classes, class_weights):
-    balanced_accuracy, update_op = tf.metrics.mean_per_class_accuracy(y, tf.argmax(logits, 1), 3)
+    balanced_accuracy, update_op = tf.metrics.mean_per_class_accuracy(y, tf.argmax(logits, 1), n_classes)
     y = tf.reshape(tf.one_hot(y, depth=n_classes, axis=1), [-1, n_classes])
 
     loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=y) * tf.reduce_sum(tf.constant(class_weights, dtype=tf.float32) * y, axis=1))
