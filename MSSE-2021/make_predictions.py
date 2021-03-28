@@ -77,6 +77,8 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
         tf.saved_model.loader.load(sess, ["serve"], os.path.join(model_ckpt_path, "{}".format(model)))
 
         for subject_id in subject_ids:
+            if not args.silent:
+                logger.info('Starting prediction generation for the subject {}'.format(subject_id))
             data = list(input_iterator(pre_processed_data_dir, subject_id))
             x, timestamps, labels = [d[0].reshape(-1, int(1/downsample_window * cnn_window_size),
                                           int(gt3x_frequency*downsample_window), 1) for d in data], [d[1] for d in data], [d[2] for d in data]
@@ -123,12 +125,17 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                     fout.write(formatstr.format(*values))
 
             fout.close()
+            if not args.silent:
+                logger.info('Completed prediction generation for the subject {}'.format(subject_id))
 
     if perform_ensemble:
         if not os.path.exists(os.path.join(output_dir, 'CHAP_ACT')):
             os.makedirs(os.path.join(output_dir, 'CHAP_ACT'))
 
         for subject_id in subject_ids:
+            if not args.silent:
+                logger.info('Starting enseble model prediction generation for the subject {}'.format(subject_id))
+
             df_1 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_1/{}.csv".format(subject_id)))
             df_2 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_2/{}.csv".format(subject_id)))
             df_3 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_3/{}.csv".format(subject_id)))
@@ -175,6 +182,10 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
             if len(modfied_dfs) > 0:
                 user_df = pd.concat(modfied_dfs)
                 user_df.to_csv(os.path.join(output_dir, "CHAP_ACT/{}.csv".format(subject_id)), index=False)
+            
+            if not args.silent:
+                logger.info('Completed enseble model prediction generation for the subject {}'.format(subject_id))
+
 
 
 if __name__ == "__main__":
