@@ -57,7 +57,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     if model not in ['CHAP_ACT', 'CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT_AUSDIAB', 'CUSTOM_MODEL']:
         raise Exception('model should be one of: CHAP_ACT, CHAP_ACT_1, CHAP_ACT_2, CHAP_ACT_3, CHAP_ACT_AUSDIAB, or CUSTOM_MODEL')
 
-    subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir)]
+    subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir) if not fname.startswith('.')]
 
 
     perform_ensemble = False
