@@ -193,7 +193,7 @@ We currently support several pre-trained models that can be used to generate pre
 |Training Dataset | Description                                             |
 |-----------------|---------------------------------------------------------|
 |ACT              | ACT is a cohort of community dwelling older adults age 65+. At time of accelerometer wear, the sample had a mean age of 76.7 years and was approximately 59% female and 90% non-Hispanic White.|
-|AUSDIAB          |                                                         | 
+|AUSDIAB          | AUSDIAB is a cohort of older adults. At time of accelerometer wear, the sample had a mean age of 58.3 years and was approximately 56% female.| 
 
 ## Training Your Own Model
 To train your own model invoke the `train_model.py` as follows:
