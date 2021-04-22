@@ -36,7 +36,9 @@ def input_iterator(data_root, subject_id, train=False):
         timestamps_batch = []
         label_batch = []
         for d, t, s, nw, l in zip(data, timestamps, sleeping, non_wear, label):
-            if s == 1 or nw == 1 or (train and l==-1):
+            if train and l == -1:
+                raise Exception('Missing ground truth label information in pre-processed data')
+            if s == 1 or nw == 1:
                 if len(timestamps_batch) > 0:
                     yield np.array(data_batch), np.array(timestamps_batch), np.array(label_batch)
                 data_batch = []

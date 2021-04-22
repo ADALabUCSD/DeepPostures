@@ -3,8 +3,9 @@
   - [Pre-Requisites](#pre-requisites)
   - [Data](#data)
   - [Pre-Processing Data](#pre-processing-data)
-  - [Generating Predictions](#generating-predictions)
+  - [Generating Predictions from Pre-Trained Models](#generating-predictions-from-pre-trained-models)
   - [Training Your Own Model](#training-your-own-model)
+  - [Generating Predictions using a Custom-Trained Model](#generating-predictions-using-a-custom-trained-model)
    
 ## Pre-Requisites
 You must be running on Python 3 with the following python packages installed. We also recommend using a machine that has GPU support.
@@ -87,16 +88,18 @@ First, you need to create pre-processed data from the source data. To do this in
 Complete usage details of this script are as follows:
 
     usage: pre_process_data.py [-h] --gt3x-dir GT3X_DIR --valid-days-file
-                           VALID_DAYS_FILE --pre-processed-dir
-                           PRE_PROCESSED_DIR
-                           [--sleep-logs-file SLEEP_LOGS_FILE]
-                           [--non-wear-times-file NON_WEAR_TIMES_FILE]
-                           [--n-start-id N_START_ID] [--n-end-id N_END_ID]
-                           [--expression-after-id EXPRESSION_AFTER_ID]
-                           [--window-size WINDOW_SIZE]
-                           [--gt3x-frequency GT3X_FREQUENCY]
-                           [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
-                           [--silent]
+                            VALID_DAYS_FILE --pre-processed-dir
+                            PRE_PROCESSED_DIR
+                            [--sleep-logs-file SLEEP_LOGS_FILE]
+                            [--non-wear-times-file NON_WEAR_TIMES_FILE]
+                            [--activpal-dir ACTIVPAL_DIR]
+                            [--n-start-id N_START_ID] [--n-end-id N_END_ID]
+                            [--expression-after-id EXPRESSION_AFTER_ID]
+                            [--window-size WINDOW_SIZE]
+                            [--gt3x-frequency GT3X_FREQUENCY]
+                            [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
+                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
+                            [--silent]
 
     Argument parser for preprocessing the input data.
 
@@ -106,6 +109,8 @@ Complete usage details of this script are as follows:
                             Path to the valid days file
     --pre-processed-dir PRE_PROCESSED_DIR
                             Pre-processed data directory
+    --activpal-dir ACTIVPAL_DIR
+                            ActivPAL data directory
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -128,15 +133,18 @@ Complete usage details of this script are as follows:
                             as the file name
     --window-size WINDOW_SIZE
                             Window size in seconds on which the predictions to be
-                            made
+                            made (default: 10)
     --gt3x-frequency GT3X_FREQUENCY
-                            GT3X device frequency in Hz
+                            GT3X device frequency in Hz (default: 30)
     --down-sample-frequency DOWN_SAMPLE_FREQUENCY
-                            Downsample frequency in Hz for GT3X data
+                            Downsample frequency in Hz for GT3X data (default: 10)
+    --activpal-label-map ACTIVPAL_LABEL_MAP
+                            ActivPal label vocabulary (default: {"0": 0, "1": 1,
+                            "2": 1})
     --silent              Whether to hide info messages
 
 
-## Generating Predictions
+## Generating Predictions from Pre-Trained Models
 You can use the released pre-trained models to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
     
     python make_predictions.py --pre-processed-dir <pre_processed_data_dir>
@@ -144,15 +152,9 @@ You can use the released pre-trained models to generate predictions using your o
 Complete usage details of this script are as follows:
 
     usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                            [--model {CHAP_ACT_1,CHAP_ACT_2,CHAP_ACT_3,CHAP_ACT,CHAP_ACT_AUSDIAB}]
-                            [--predictions-dir PREDICTIONS_DIR] [--no-segment]
-                            [--output-label]
-                            [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
-                            [--cnn-window-size CNN_WINDOW_SIZE]
-                            [--bi-lstm-window-size BI_LSTM_WINDOW_SIZE]
-                            [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
-                            [--gt3x-frequency GT3X_FREQUENCY]
-                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
+                            [--model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}]
+                            [--predictions-dir PREDICTIONS_DIR]
+                            [--no-segment] [--output-label]
                             [--silent]
 
     Argument parser for generating model predictions.
@@ -163,54 +165,39 @@ Complete usage details of this script are as follows:
 
     optional arguments:
     -h, --help            show this help message and exit
-    --model {CHAP_ACT_1,CHAP_ACT_2,CHAP_ACT_3,CHAP_ACT,CHAP_ACT_AUSDIAB}
+    --model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}
                             Pre-trained prediction model name (default:
-                            CHAP_ACT_AUSDIAB)
+                            CHAP_ALL_ADULTS)
     --predictions-dir PREDICTIONS_DIR
-                            Training batch size
+                            Predictions output directory (default: ./predictions)
     --no-segment          Do not output segment number
     --output-label        Whether to output the actual label
-    --model-checkpoint-path MODEL_CHECKPOINT_PATH
-                            Path where the custom trained model checkpoint is
-                            located
-    --cnn-window-size CNN_WINDOW_SIZE
-                            CNN window size of the model in seconds on which the
-                            predictions to be made (default: 10).
-    --bi-lstm-window-size BI_LSTM_WINDOW_SIZE
-                            BiLSTM window size in minutes (default: 7).
-    --down-sample-frequency DOWN_SAMPLE_FREQUENCY
-                            Downsample frequency in Hz for GT3X data (default:
-                            10).
-    --gt3x-frequency GT3X_FREQUENCY
-                            GT3X device frequency in Hz (default: 30)
-    --activpal-label-map ACTIVPAL_LABEL_MAP
-                            ActivPal label vocabulary
     --silent              Whether to hide info messages
 
 We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ACT_AUSDIAB` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
 | Model                                               | Training Dataset    |
 |-----------------------------------------------------|---------------------|
-|CHAP_ACT_AUSDIAB (default and recommended)           | ACT + AUSDIAB       |
-|CHAP_ACT_1                                           | ACT                 |
-|CHAP_ACT_2                                           | ACT                 |
-|CHAP_ACT_3                                           | ACT                 |
-|CHAP_ACT (ensemble of ACT_1, ACT_2, and ACT_3)       | ACT                 |
+|CHAP_ALL_ADULTS  (default and recommended)           | ACT + AUSDIAB       |
+|CHAP_ACT_A                                           | ACT                 |
+|CHAP_ACT_B                                           | ACT                 |
+|CHAP_ACT_C                                           | ACT                 |
+|CHAP_ACT (ensemble of ACT_A, ACT_B, and ACT_C)       | ACT                 |
 
 |Training Dataset | Description                                             |
 |-----------------|---------------------------------------------------------|
-|ACT              | ACT dataset is an older adult dataset collected from ...|
+|ACT              | ACT is a cohort of community dwelling older adults age 65+. At time of accelerometer wear, the sample had a mean age of 76.7 years and was approximately 59% female and 90% non-Hispanic White.|
 |AUSDIAB          |                                                         | 
 
 ## Training Your Own Model
 To train your own model invoke the `train_model.py` as follows:
 
-    python --pre-processed-dir <pre-processed-dir> --model-checkpoint-path <checkpoint-dir>
+    python train_model.py --pre-processed-dir <pre-processed-dir> --model-checkpoint-path <checkpoint-dir>
 
 Complete usage details of this script are as follows:
 
     usage: train_model.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                        [--warm-start-model {CHAP_ACT_AUSDIAB}]
+                        [--transfer-learning-model {CHAP_ALL_ADULTS}]
                         [--learning-rate LEARNING_RATE]
                         [--num-epochs NUM_EPOCHS] [--batch-size BATCH_SIZE]
                         [--amp-factor AMP_FACTOR]
@@ -234,46 +221,102 @@ Complete usage details of this script are as follows:
 
     optional arguments:
     -h, --help            show this help message and exit
-    --warm-start-model {CHAP_ACT_AUSDIAB}
-                            Pre-trained model to warm start the training
+    --transfer-learning-model {CHAP_ALL_ADULTS}
+                            Transfer learning model name (default:
+                            CHAP_ALL_ADULTS)
     --learning-rate LEARNING_RATE
-                            Learning rate for training the model
+                            Learning rate for training the model (default: 0.0001)
     --num-epochs NUM_EPOCHS
-                            Number of epochs to train the model
+                            Number of epochs to train the model (default: 15)
     --batch-size BATCH_SIZE
-                            Training batch size
+                            Training batch size (default: 16)
     --amp-factor AMP_FACTOR
                             Factor to increase the number of neurons in the CNN
-                            layers
+                            layers (default: 2)
     --cnn-window-size CNN_WINDOW_SIZE
                             CNN window size in seconds on which the predictions to
-                            be made
+                            be made (default: 10)
     --bi-lstm-window-size BI_LSTM_WINDOW_SIZE
                             BiLSTM window size in minutes on which the predictions
-                            to be smoothed
+                            to be smoothed (default: 7)
     --shuffle-buffer-size SHUFFLE_BUFFER_SIZE
                             Training data shuffle buffer size in terms of number
-                            of records
+                            of records (default: 10000)
     --training-data-fraction TRAINING_DATA_FRACTION
                             Percentage of subjects to be used for training
+                            (default: 60)
     --validation-data-fraction VALIDATION_DATA_FRACTION
                             Percentage of subjects to be used for validation
+                            (default: 20)
     --testing-data-fraction TESTING_DATA_FRACTION
                             Percentage of subjects to be used for testing
+                            (default: 20)
     --model-checkpoint-path MODEL_CHECKPOINT_PATH
-                            Path where the trained model will be saved
+                            Path where the trained model will be saved (default:
+                            ./model-checkpoint)
     --num-classes NUM_CLASSES
-                            Number of classes in the training dataset
+                            Number of classes in the training dataset (default: 2)
     --class-weights CLASS_WEIGHTS
-                            Class weights for loss aggregation
+                            Class weights for loss aggregation (default: [1.0,
+                            1.0])
     --down-sample-frequency DOWN_SAMPLE_FREQUENCY
-                            Downsample frequency in Hz for GT3X data
+                            Downsample frequency in Hz for GT3X data (default: 10)
     --silent              Whether to hide info messages
 
 **Model Selection:** Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and BiLSTM window size etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
 
 **Transfer Learning:** Instead of start training a model from scratch, you can also start with an existing model and tune it for your dataset. This is also called transfer learning and can be used to train a high-quality model with limited amount of training data. Currently we support transfer learning using the `CHAP_ACT_AUSDIAB` model. In order to use transfer learning pass the `--transfer-learning-model CHAP_ACT_AUSDIAB` option when invoking the `train_model.py` script. Note that with transfer learning only the training hyperparameters (e.g., batch size, learning rate, num epochs etc.) can be tweaked. The architectural hyperparameters (e.g., BiLSTM window size, CNN window size) will be set to the values of the source model. When transfer learning, it is recommeded to use a low learning rate (e.g., 0.00001) to avoid overfitting.
 
-**Generating Prediction using a Custom Model:** After training your own model you can use it to generate predictions by passing the model checkpoint path to the `make_predictions.py` script as follows:
+## Generating Predictions using a Custom-Trained Model
+After training your own model you can use it to generate predictions by passing the model checkpoint path to the `make_predictions.py` script as follows:
 
     python make_predictions.py --pre-processed-dir <pre-processed-dir> --predictions-dir <predictions-dir> --model-checkpoint-path <checkpoint-dir>    
+
+If you change the default tuning parameters during training (e.g., bi-lstm-window-size), you also need to set the same values for `make_predictions.py` by using the respective directives (e.g., `--bi-lstm-window-size`).
+
+Complete usage details of `make_predictions.pu` script with all overiding configuration values are as follows:
+
+    usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
+                            [--model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}]
+                            [--predictions-dir default: ./predictions) PREDICTIONS_DIR
+                            [--no-segment] [--output-label]
+                            [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
+                            [--cnn-window-size CNN_WINDOW_SIZE]
+                            [--bi-lstm-window-size BI_LSTM_WINDOW_SIZE]
+                            [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
+                            [--gt3x-frequency GT3X_FREQUENCY]
+                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
+                            [--silent]
+
+    Argument parser for generating model predictions.
+
+    required arguments:
+    --pre-processed-dir PRE_PROCESSED_DIR
+                            Pre-processed data directory
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}
+                            Pre-trained prediction model name (default:
+                            CHAP_ALL_ADULTS)
+    --predictions-dir PREDICTIONS_DIR
+                            Predictions output directory (default: ./predictions)
+    --no-segment          Do not output segment number
+    --output-label        Whether to output the actual label
+    --model-checkpoint-path MODEL_CHECKPOINT_PATH
+                            Path where the custom trained model checkpoint is
+                            located
+    --cnn-window-size CNN_WINDOW_SIZE
+                            CNN window size of the model in seconds on which the
+                            predictions to be made (default: 10).
+    --bi-lstm-window-size BI_LSTM_WINDOW_SIZE
+                            BiLSTM window size in minutes (default: 7).
+    --down-sample-frequency DOWN_SAMPLE_FREQUENCY
+                            Downsample frequency in Hz for GT3X data (default:
+                            10).
+    --gt3x-frequency GT3X_FREQUENCY
+                            GT3X device frequency in Hz (default: 30)
+    --activpal-label-map ACTIVPAL_LABEL_MAP
+                            ActivPal label vocabulary (default: {"sitting": 0,
+                            "not-sitting": 1, "no-label": -1})
+    --silent              Whether to hide info messages

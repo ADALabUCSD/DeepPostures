@@ -64,24 +64,24 @@ if __name__ == "__main__":
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
 
-    optional_arguments.add_argument('--transfer-learning-model', help='Transfer learning model name', default=None, required=False, choices=['CHAP_ACT_AUSDIAB'])
-    optional_arguments.add_argument('--learning-rate', help='Learning rate for training the model', default=1e-4, type=float, required=False)
-    optional_arguments.add_argument('--num-epochs', help='Number of epochs to train the model', default=15, type=int, required=False)
-    optional_arguments.add_argument('--batch-size', help='Training batch size', default=16, type=int, required=False)
+    optional_arguments.add_argument('--transfer-learning-model', help='Transfer learning model name (default: CHAP_ALL_ADULTS)', default=None, required=False, choices=['CHAP_ALL_ADULTS'])
+    optional_arguments.add_argument('--learning-rate', help='Learning rate for training the model (default: 0.0001)', default=1e-4, type=float, required=False)
+    optional_arguments.add_argument('--num-epochs', help='Number of epochs to train the model (default: 15)', default=15, type=int, required=False)
+    optional_arguments.add_argument('--batch-size', help='Training batch size (default: 16)', default=16, type=int, required=False)
     
-    optional_arguments.add_argument('--amp-factor', help='Factor to increase the number of neurons in the CNN layers', default=2, type=int, required=False)
-    optional_arguments.add_argument('--cnn-window-size', help='CNN window size in seconds on which the predictions to be made', default=10, type=int, required=False)
-    optional_arguments.add_argument('--bi-lstm-window-size', help='BiLSTM window size in minutes on which the predictions to be smoothed', default=7, type=int, required=False)
+    optional_arguments.add_argument('--amp-factor', help='Factor to increase the number of neurons in the CNN layers (default: 2)', default=2, type=int, required=False)
+    optional_arguments.add_argument('--cnn-window-size', help='CNN window size in seconds on which the predictions to be made (default: 10)', default=10, type=int, required=False)
+    optional_arguments.add_argument('--bi-lstm-window-size', help='BiLSTM window size in minutes on which the predictions to be smoothed (default: 7)', default=7, type=int, required=False)
     
-    optional_arguments.add_argument('--shuffle-buffer-size', help='Training data shuffle buffer size in terms of number of records', default=10000, type=int, required=False)
-    optional_arguments.add_argument('--training-data-fraction', help='Percentage of subjects to be used for training', default=60, type=int, required=False)
-    optional_arguments.add_argument('--validation-data-fraction', help='Percentage of subjects to be used for validation', default=20, type=int, required=False)
-    optional_arguments.add_argument('--testing-data-fraction', help='Percentage of subjects to be used for testing', default=20, type=int, required=False)
-    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved', default='./model-checkpoint', required=False)
+    optional_arguments.add_argument('--shuffle-buffer-size', help='Training data shuffle buffer size in terms of number of records (default: 10000)', default=10000, type=int, required=False)
+    optional_arguments.add_argument('--training-data-fraction', help='Percentage of subjects to be used for training (default: 60)', default=60, type=int, required=False)
+    optional_arguments.add_argument('--validation-data-fraction', help='Percentage of subjects to be used for validation (default: 20)', default=20, type=int, required=False)
+    optional_arguments.add_argument('--testing-data-fraction', help='Percentage of subjects to be used for testing (default: 20)', default=20, type=int, required=False)
+    optional_arguments.add_argument('--model-checkpoint-path', help='Path where the trained model will be saved (default: ./model-checkpoint)', default='./model-checkpoint', required=False)
     
-    optional_arguments.add_argument('--num-classes', help='Number of classes in the training dataset', default=2, type=int, required=False)
-    optional_arguments.add_argument('--class-weights', help='Class weights for loss aggregation', default='[1.0, 1.0]', required=False)
-    optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data', default=10, type=int, required=False)
+    optional_arguments.add_argument('--num-classes', help='Number of classes in the training dataset (default: 2)', default=2, type=int, required=False)
+    optional_arguments.add_argument('--class-weights', help='Class weights for loss aggregation (default: [1.0, 1.0])', default='[1.0, 1.0]', required=False)
+    optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data (default: 10)', default=10, type=int, required=False)
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         raise Exception('Model checkpoint: {} already exists.'.format(args.model_checkpoint_path))
 
     if args.transfer_learning_model:
-        if args.transfer_learning_model == 'CHAP_ACT_AUSDIAB':
+        if args.transfer_learning_model == 'CHAP_ALL_ADULTS':
             args.amp_factor = 2
             args.cnn_window_size = 10
             args.bi_lstm_win_size = 7

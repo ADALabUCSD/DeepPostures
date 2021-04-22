@@ -358,10 +358,10 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--expression-after-id', help='String or list of strings specifying different string spliting character \
          that should be used to identify the ID from gt3x file name. The first split will be used as the file name', type=int, required=False)
 
-    optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made', default=10, type=int, required=False)
-    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz', default=30, type=int, required=False)
-    optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data', default=10, type=int, required=False)
-    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"0": 0, "1": 1, "2": 1}', required=False)
+    optional_arguments.add_argument('--window-size', help='Window size in seconds on which the predictions to be made (default: 10)', default=10, type=int, required=False)
+    optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz (default: 30)', default=30, type=int, required=False)
+    optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data (default: 10)', default=10, type=int, required=False)
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary (default: {"0": 0, "1": 1, "2": 1})', default='{"0": 0, "1": 1, "2": 1}', required=False)
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()

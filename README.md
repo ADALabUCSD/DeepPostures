@@ -3,7 +3,7 @@ DeepPostures
 
 This repository contains the code artifacts released as part of the following publications:
 
-- /JMPB-2021 : **Application of Convolutional Neural Network Algorithms for Advancing Sedentary and Activity Bout Classification**, Journal for the Measurement of Physical Behaviour, [https://doi.org/10.1123/jmpb.2020-0016](https://doi.org/10.1123/jmpb.2020-0016)
+- /JMPB-2021 : **Application of Convolutional Neural Network Algorithms for Advancing Sedentary and Activity Bout Classification**, Journal for the Measurement of Physical Behaviour, [DOI](https://doi.org/10.1123/jmpb.2020-0016)|[Paper](https://adalabucsd.github.io/papers/2021_JMPB_CNN.pdf)
 - /MSSE-2021 : **The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults**
 
 

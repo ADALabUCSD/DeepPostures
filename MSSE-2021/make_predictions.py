@@ -42,7 +42,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     output_dir. Predicted value will be one of 0: sedentary or 1: non-sedentary.
     :param pre_processed_data_dir: Path to the pre-processed data directory
     :param output_dir: Path to the output data directory where the predictions will be stored
-    :param model: Which model to use. Avaialble options: 'CHAP_ACT,' 'CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3' and 'CHAP_ACT_AUSDIAB' (default: 'CHAP_ACT_AUSDIAB').
+    :param model: Which model to use. Avaialble options: 'CHAP_ACT,' 'CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C' and 'CHAP_ALL_ADULTS' (default: 'CHAP_ALL_ADULTS').
     :param segment: Whether to output the segment number.
     :param output_label: Whether to output the actual label.
     :param label_map: Human readable label name map for predicted index.
@@ -54,15 +54,15 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     """
 
     model = model.strip()
-    if model not in ['CHAP_ACT', 'CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT_AUSDIAB', 'CUSTOM_MODEL']:
-        raise Exception('model should be one of: CHAP_ACT, CHAP_ACT_1, CHAP_ACT_2, CHAP_ACT_3, CHAP_ACT_AUSDIAB, or CUSTOM_MODEL')
+    if model not in ['CHAP_ACT', 'CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C', 'CHAP_ALL_ADULTS', 'CUSTOM_MODEL']:
+        raise Exception('model should be one of: CHAP_ACT, CHAP_ACT_A, CHAP_ACT_B, CHAP_ACT_C, CHAP_ALL_ADULTS, or CUSTOM_MODEL')
 
     subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir) if not fname.startswith('.')]
 
 
     perform_ensemble = False
     if model == 'CHAP_ACT':
-        models = ['CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3']
+        models = ['CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C']
         perform_ensemble = True
     else:
         models = [model]
@@ -136,9 +136,9 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
             if not args.silent:
                 logger.info('Starting enseble model prediction generation for the subject {}'.format(subject_id))
 
-            df_1 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_1/{}.csv".format(subject_id)))
-            df_2 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_2/{}.csv".format(subject_id)))
-            df_3 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_3/{}.csv".format(subject_id)))
+            df_1 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_A/{}.csv".format(subject_id)))
+            df_2 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_B/{}.csv".format(subject_id)))
+            df_3 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_C/{}.csv".format(subject_id)))
 
             modfied_dfs = []
             if segment:
@@ -156,11 +156,11 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                         v_3 = v_3[:min_len]
 
                         v = v_3.copy()
-                        v['predictions_1'] = v_1.prediction.values.tolist()
-                        v['predictions_2'] = v_2.prediction.values.tolist()
-                        v['predictions_3'] = v_3.prediction.values.tolist()
+                        v['predictions_A'] = v_1.prediction.values.tolist()
+                        v['predictions_B'] = v_2.prediction.values.tolist()
+                        v['predictions_C'] = v_3.prediction.values.tolist()
 
-                        v.prediction = v[['predictions_1', 'predictions_2', 'predictions_3']].mode(axis='columns')
+                        v.prediction = v[['predictions_A', 'predictions_B', 'predictions_C']].mode(axis='columns')
                         modfied_dfs.append(v)
             else:
                 min_len = min(min(df_1.prediction.count(), df_2.prediction.count()), df_3.prediction.count())
@@ -170,11 +170,11 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                 v_3 = df_3[:min_len]
 
                 v = v_3.copy()
-                v['predictions_1'] = v_1.prediction.values.tolist()
-                v['predictions_2'] = v_2.prediction.values.tolist()
-                v['predictions_3'] = v_3.prediction.values.tolist()
+                v['predictions_A'] = v_1.prediction.values.tolist()
+                v['predictions_B'] = v_2.prediction.values.tolist()
+                v['predictions_C'] = v_3.prediction.values.tolist()
 
-                v.prediction = (v['predictions_1'] + v['predictions_2'] + v['predictions_3']) / 3
+                v.prediction = (v['predictions_A'] + v['predictions_B'] + v['predictions_C']) / 3
                 v.prediction = v.prediction.map(lambda x: round(x))
                 modfied_dfs.append(v)
 
@@ -194,8 +194,8 @@ if __name__ == "__main__":
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
-    optional_arguments.add_argument('--model', help='Pre-trained prediction model name (default: CHAP_ACT_AUSDIAB)', default='CHAP_ACT_AUSDIAB', required=False, choices=['CHAP_ACT_1', 'CHAP_ACT_2', 'CHAP_ACT_3', 'CHAP_ACT', 'CHAP_ACT_AUSDIAB'])
-    optional_arguments.add_argument('--predictions-dir', help='Training batch size', default='./predictions', required=False) 
+    optional_arguments.add_argument('--model', help='Pre-trained prediction model name (default: CHAP_ALL_ADULTS)', default='CHAP_ALL_ADULTS', required=False, choices=['CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C', 'CHAP_ACT', 'CHAP_ALL_ADULTS'])
+    optional_arguments.add_argument('--predictions-dir', help='Predictions output directory (default: ./predictions)', default='./predictions', required=False) 
     optional_arguments.add_argument('--no-segment', help='Do not output segment number', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--output-label', help='Whether to output the actual label', default=False, required=False, action='store_true')
 
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--bi-lstm-window-size', help='BiLSTM window size in minutes (default: 7).', default=7, required=False)
     optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data (default: 10).', default=10, type=int, required=False)   
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz (default: 30)', default=30, type=int, required=False)
-    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary', default='{"sitting": 0, "not-sitting": 1, "no-label": -1}', required=False)
+    optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary (default: {"sitting": 0, "not-sitting": 1, "no-label": -1})', default='{"sitting": 0, "not-sitting": 1, "no-label": -1}', required=False)
     
     
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     label_map = json.loads(args.activpal_label_map)
     label_map = {label_map[k]:k for k in label_map}
 
-    bi_lstm_window_sizes = {"CHAP_ACT_1": 9, "CHAP_ACT_2": 9, "CHAP_ACT_3": 7, "CHAP_ACT_AUSDIAB": 7}
+    bi_lstm_window_sizes = {"CHAP_ACT_A": 9, "CHAP_ACT_B": 9, "CHAP_ACT_C": 7, "CHAP_ALL_ADULTS": 7}
     bi_lstm_window_sizes['CUSTOM_MODEL'] = args.bi_lstm_window_size
 
     if args.model_checkpoint_path is not None:
