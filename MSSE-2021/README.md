@@ -8,7 +8,13 @@
   - [Generating Predictions using a Custom-Trained Model](#generating-predictions-using-a-custom-trained-model)
    
 ## Pre-Requisites
-You must be running on Python 3 with the following python packages installed. We also recommend using a machine that has GPU support.
+We recommend first [installing Anaconda](https://docs.anaconda.com/anaconda/install/) and then running the following commands to setup the environment. We also recommend using a machine that has GPU support, specially if you plan to train your own models.
+
+    conda env create -f deep_postures_gpu_env.yml # for cpu use deep_postures_cpu_env.yml
+    conda activate deep_postures
+
+
+Alternatively, you can manually install Python 3 and use `pip` to install the following python packages.
 
     pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
     pip install pandas
