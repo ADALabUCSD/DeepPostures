@@ -19,6 +19,7 @@ import gc
 import h5py
 import json
 import logging
+import shutil
 import pandas as pd
 import numpy as np
 from scipy.stats import mode
@@ -320,24 +321,31 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
             raise Exception('Did not find valid days records for the subject {}'.format(subject_id))
 
     for subject_id, file_name in zip(subject_ids, gt3x_file_names):
-        with open(os.path.join(gt3x_30Hz_csv_dir_root, '{}.csv'.format(file_name))) as fin:
-            if len(non_wear_dict) > 0 and subject_id not in non_wear_dict and not args.silent:
-                logger.warn('Did not find non-wear records for the subject {}'.format(subject_id))
-            if len(sleep_logs_dict) > 0 and subject_id not in sleep_logs_dict and not args.silent:
-                logger.warn('Did not find sleep log records for the subject {}'.format(subject_id))
+        try:
+            with open(os.path.join(gt3x_30Hz_csv_dir_root, '{}.csv'.format(file_name))) as fin:
+                if len(non_wear_dict) > 0 and subject_id not in non_wear_dict and not args.silent:
+                    logger.warn('Did not find non-wear records for the subject {}'.format(subject_id))
+                if len(sleep_logs_dict) > 0 and subject_id not in sleep_logs_dict and not args.silent:
+                    logger.warn('Did not find sleep log records for the subject {}'.format(subject_id))
 
-            if not args.silent:
-                logger.info('Starting pre-processing for the subject {}'.format(subject_id))
-            gt3x_lines = fin.readlines()
+                if not args.silent:
+                    logger.info('Starting pre-processing for the subject {}'.format(subject_id))
+                gt3x_lines = fin.readlines()
 
-            if activpal_events_csv_dir_root:
-                ap_df = pd.read_csv(os.path.join(activpal_events_csv_dir_root, '{}.csv'.format(file_name)))
-            else:
-                ap_df = None
+                if activpal_events_csv_dir_root:
+                    ap_df = pd.read_csv(os.path.join(activpal_events_csv_dir_root, '{}.csv'.format(file_name)))
+                else:
+                    ap_df = None
 
-            map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
-            if not args.silent:
-                logger.info('Completed pre-processing for the subject {}'.format(subject_id))
+                map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
+                if not args.silent:
+                    logger.info('Completed pre-processing for the subject {}'.format(subject_id))
+        except:
+            logger.error('Failed pre-processing for the subject {}'.format(subject_id))
+            output_dir_path = os.path.join(pre_process_data_output_dir, subject_id)
+            if os.path.exists(output_dir_path):
+                shutil.rmtree(output_dir_path)
+
 
 
 if __name__ == "__main__":
