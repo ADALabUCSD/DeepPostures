@@ -340,8 +340,9 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                 map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
                 if not args.silent:
                     logger.info('Completed pre-processing for the subject {}'.format(subject_id))
-        except:
+        except Exception as e:
             logger.error('Failed pre-processing for the subject {}'.format(subject_id))
+            logger.error(e, exc_info=True)
             output_dir_path = os.path.join(pre_process_data_output_dir, subject_id)
             if os.path.exists(output_dir_path):
                 shutil.rmtree(output_dir_path)
