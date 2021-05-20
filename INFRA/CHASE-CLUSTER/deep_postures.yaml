@@ -11,7 +11,7 @@ spec:
     resources:
       limits:
         memory: "12Gi"
-        cpu: 8
+        cpu: 2
     volumeMounts:
       - name: fs-store
         mountPath: "/data"
