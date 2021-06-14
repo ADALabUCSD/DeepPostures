@@ -1,27 +1,11 @@
 # Table of Contents
 - [Table of Contents](#table-of-contents)
-  - [Pre-Requisites](#pre-requisites)
   - [Data](#data)
   - [Pre-Processing Data](#pre-processing-data)
   - [Generating Predictions from Pre-Trained Models](#generating-predictions-from-pre-trained-models)
   - [Training Your Own Model](#training-your-own-model)
   - [Generating Predictions using a Custom-Trained Model](#generating-predictions-using-a-custom-trained-model)
    
-## Pre-Requisites
-We recommend first [installing Anaconda](https://docs.anaconda.com/anaconda/install/) and then running the following commands to setup the environment. We also recommend using a machine that has GPU support, specially if you plan to train your own models.
-
-    conda env create -f deep_postures_gpu_env.yml # for cpu use deep_postures_cpu_env.yml
-    conda activate deep_postures
-
-
-Alternatively, you can manually install Python 3 and use `pip` to install the following python packages.
-
-    pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
-    pip install pandas
-    pip install numpy
-    pip install scipy
-    pip install h5py
-
 ## Data
 - **Accelerometer Data**: We assume the input data is obtained from ActiGraph GT3X device and converted into single .csv files. The files should be named as **<subject_id>.csv** and files for all subjects should be put in the same directory. First few lines of a sample csv file are as follows:
     ~~~
@@ -42,7 +26,9 @@ Alternatively, you can manually install Python 3 and use `pip` to install the fo
     -0.179,-0.182,0.959
     ~~~
 
-- **Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
+    **Note:** The pre-processing function expects, by default, an Actigraph RAW file at 30hz with normal filter. If you have Actigraph RAW data at a different Hz level, please specify in the pre_process_data function using the gt3x-frequency parameter.
+
+- **(Optional) Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
     ~~~
     ID,Date.Valid.Day
@@ -89,13 +75,13 @@ Alternatively, you can manually install Python 3 and use `pip` to install the fo
 ## Pre-Processing Data
 First, you need to create pre-processed data from the source data. To do this invoke the `pre_process_data.py` script as follows:
 
-    python pre_process_data.py --gt3x-dir <gt3x_data_dir> --valid-days-file <valid_days_file> --pre-processed-dir <output_dir>
+    python pre_process_data.py --gt3x-dir <gt3x_data_dir> --pre-processed-dir <output_dir>
 
 Complete usage details of this script are as follows:
 
-    usage: pre_process_data.py [-h] --gt3x-dir GT3X_DIR --valid-days-file
-                            VALID_DAYS_FILE --pre-processed-dir
+    usage: pre_process_data.py [-h] --gt3x-dir GT3X_DIR --pre-processed-dir
                             PRE_PROCESSED_DIR
+                            [--valid-days-file VALID_DAYS_FILE]
                             [--sleep-logs-file SLEEP_LOGS_FILE]
                             [--non-wear-times-file NON_WEAR_TIMES_FILE]
                             [--activpal-dir ACTIVPAL_DIR]
@@ -111,19 +97,19 @@ Complete usage details of this script are as follows:
 
     required arguments:
     --gt3x-dir GT3X_DIR   GT3X data directory
-    --valid-days-file VALID_DAYS_FILE
-                            Path to the valid days file
     --pre-processed-dir PRE_PROCESSED_DIR
                             Pre-processed data directory
-    --activpal-dir ACTIVPAL_DIR
-                            ActivPAL data directory
 
     optional arguments:
     -h, --help            show this help message and exit
+    --valid-days-file VALID_DAYS_FILE
+                            Path to the valid days file
     --sleep-logs-file SLEEP_LOGS_FILE
                             Path to the sleep logs file
     --non-wear-times-file NON_WEAR_TIMES_FILE
                             Path to non wear times file
+    --activpal-dir ACTIVPAL_DIR
+                            ActivPAL data directory
     --n-start-id N_START_ID
                             The index of the starting character of the ID in gt3x
                             file names. Indexing starts with 1. If specified
@@ -158,7 +144,7 @@ You can use the released pre-trained models to generate predictions using your o
 Complete usage details of this script are as follows:
 
     usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                            [--model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}]
+                            [--model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS,CHAP_CHILDREN}]
                             [--predictions-dir PREDICTIONS_DIR]
                             [--no-segment] [--output-label]
                             [--silent]
@@ -171,7 +157,7 @@ Complete usage details of this script are as follows:
 
     optional arguments:
     -h, --help            show this help message and exit
-    --model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}
+    --model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS,CHAP_CHILDREN}
                             Pre-trained prediction model name (default:
                             CHAP_ALL_ADULTS)
     --predictions-dir PREDICTIONS_DIR
@@ -180,20 +166,22 @@ Complete usage details of this script are as follows:
     --output-label        Whether to output the actual label
     --silent              Whether to hide info messages
 
-We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ACT_AUSDIAB` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
+We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ALL_ADULTS` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
 | Model                                               | Training Dataset    |
 |-----------------------------------------------------|---------------------|
 |CHAP_ALL_ADULTS  (default and recommended)           | ACT + AUSDIAB       |
-|CHAP_ACT_A                                           | ACT                 |
-|CHAP_ACT_B                                           | ACT                 |
-|CHAP_ACT_C                                           | ACT                 |
-|CHAP_ACT (ensemble of ACT_A, ACT_B, and ACT_C)       | ACT                 |
+|CHAP_A                                               | ACT                 |
+|CHAP_B                                               | ACT                 |
+|CHAP_C                                               | ACT                 |
+|CHAP (ensemble of A, B, and C)                       | ACT                 |
+|CHAP_CHILDREN                                        | PHASE               |
 
 |Training Dataset | Description                                             |
 |-----------------|---------------------------------------------------------|
 |ACT              | ACT is a cohort of community dwelling older adults age 65+. At time of accelerometer wear, the sample had a mean age of 76.7 years and was approximately 59% female and 90% non-Hispanic White.|
 |AUSDIAB          | AUSDIAB is a cohort of older adults. At time of accelerometer wear, the sample had a mean age of 58.3 years and was approximately 56% female.| 
+|PHASE            | PHASE is a cohort of children. At time of accelerometer wear, the sample had a mean age of x years and was approximately x female.| 
 
 ## Training Your Own Model
 To train your own model invoke the `train_model.py` as follows:
@@ -271,7 +259,7 @@ Complete usage details of this script are as follows:
 
 **Model Selection:** Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and BiLSTM window size etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
 
-**Transfer Learning:** Instead of start training a model from scratch, you can also start with an existing model and tune it for your dataset. This is also called transfer learning and can be used to train a high-quality model with limited amount of training data. Currently we support transfer learning using the `CHAP_ACT_AUSDIAB` model. In order to use transfer learning pass the `--transfer-learning-model CHAP_ACT_AUSDIAB` option when invoking the `train_model.py` script. Note that with transfer learning only the training hyperparameters (e.g., batch size, learning rate, num epochs etc.) can be tweaked. The architectural hyperparameters (e.g., BiLSTM window size, CNN window size) will be set to the values of the source model. When transfer learning, it is recommeded to use a low learning rate (e.g., 0.00001) to avoid overfitting.
+**Transfer Learning:** Instead of start training a model from scratch, you can also start with an existing model and tune it for your dataset. This is also called transfer learning and can be used to train a high-quality model with limited amount of training data. Currently we support transfer learning using the `CHAP_ALL_ADULTS` model. In order to use transfer learning pass the `--transfer-learning-model CHAP_ALL_ADULTS` option when invoking the `train_model.py` script. Note that with transfer learning only the training hyperparameters (e.g., batch size, learning rate, num epochs etc.) can be tweaked. The architectural hyperparameters (e.g., BiLSTM window size, CNN window size) will be set to the values of the source model. When transfer learning, it is recommeded to use a low learning rate (e.g., 0.00001) to avoid overfitting.
 
 ## Generating Predictions using a Custom-Trained Model
 After training your own model you can use it to generate predictions by passing the model checkpoint path to the `make_predictions.py` script as follows:
@@ -283,7 +271,7 @@ If you change the default tuning parameters during training (e.g., bi-lstm-windo
 Complete usage details of `make_predictions.pu` script with all overiding configuration values are as follows:
 
     usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                            [--model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}]
+                            [--model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS}]
                             [--predictions-dir default: ./predictions) PREDICTIONS_DIR
                             [--no-segment] [--output-label]
                             [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
@@ -302,7 +290,7 @@ Complete usage details of `make_predictions.pu` script with all overiding config
 
     optional arguments:
     -h, --help            show this help message and exit
-    --model {CHAP_ACT_A,CHAP_ACT_B,CHAP_ACT_C,CHAP_ACT,CHAP_ALL_ADULTS}
+    --model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS}
                             Pre-trained prediction model name (default:
                             CHAP_ALL_ADULTS)
     --predictions-dir PREDICTIONS_DIR

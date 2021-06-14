@@ -7,6 +7,23 @@ This repository contains the code artifacts released as part of the following pu
 - /MSSE-2021 : **The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults**
 
 
+Pre-Requisites
+--------------
+We recommend first [installing Anaconda](https://docs.anaconda.com/anaconda/install/) and then running the following commands to setup the environment. We also recommend using a machine that has GPU support, specially if you plan to train your own models. A CPU machine can be used if the goal is using pre-trained models to predict posture.
+
+    conda env create -f INFRA/CONDA/deep_postures_gpu_env.yml # for cpu use INFRA/CONDA/deep_postures_cpu_env.yml
+    conda activate deep_postures
+
+
+Alternatively, you can manually install Python 3 and use `pip` to install the following python packages.
+
+    pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
+    pip install pandas
+    pip install numpy
+    pip install scipy
+    pip install h5py
+
+
 Instructions
 ------------
 - Clone the repository using git `git clone https://github.com/ADALabUCSD/DeepPostures.git`

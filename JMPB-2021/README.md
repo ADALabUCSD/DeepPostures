@@ -1,18 +1,10 @@
 # Table of Contents
 - [Table of Contents](#table-of-contents)
-  - [Pre-Requisites](#pre-requisites)
   - [Data](#data)
   - [Pre-Processing Data](#pre-processing-data)
   - [Generating Predictions](#generating-predictions)
   - [Training Your Own Model](#training-your-own-model)
    
-## Pre-Requisites
-You must be running on Python 3 with the following python packages installed. We also recommend using a machine that has GPU support.
-
-    pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
-    pip install pandas
-    pip install numpy
-
 ## Data
 - **Accelerometer Data**: We assume the input data is obtained from ActiGraph GT3X device and converted into single .csv files. The files should be named as **<subject_id>.csv** and files for all subjects should be put in the same directory. First few lines of a sample csv file are as follows:
     ~~~

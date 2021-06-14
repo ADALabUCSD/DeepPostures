@@ -42,7 +42,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     output_dir. Predicted value will be one of 0: sedentary or 1: non-sedentary.
     :param pre_processed_data_dir: Path to the pre-processed data directory
     :param output_dir: Path to the output data directory where the predictions will be stored
-    :param model: Which model to use. Avaialble options: 'CHAP_ACT,' 'CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C' and 'CHAP_ALL_ADULTS' (default: 'CHAP_ALL_ADULTS').
+    :param model: Which model to use. Avaialble options: 'CHAP,' 'CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP_ALL_ADULTS', and 'CHAP_CHILDREN' (default: 'CHAP_ALL_ADULTS').
     :param segment: Whether to output the segment number.
     :param output_label: Whether to output the actual label.
     :param label_map: Human readable label name map for predicted index.
@@ -54,15 +54,15 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     """
 
     model = model.strip()
-    if model not in ['CHAP_ACT', 'CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C', 'CHAP_ALL_ADULTS', 'CUSTOM_MODEL']:
-        raise Exception('model should be one of: CHAP_ACT, CHAP_ACT_A, CHAP_ACT_B, CHAP_ACT_C, CHAP_ALL_ADULTS, or CUSTOM_MODEL')
+    if model not in ['CHAP', 'CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP_ALL_ADULTS', 'CHAP_CHILDREN', 'CUSTOM_MODEL']:
+        raise Exception('model should be one of: CHAP, CHAP_A, CHAP_B, CHAP_C, CHAP_ALL_ADULTS, CHAP_CHILDREN or CUSTOM_MODEL')
 
     subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir) if not fname.startswith('.')]
 
 
     perform_ensemble = False
-    if model == 'CHAP_ACT':
-        models = ['CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C']
+    if model == 'CHAP':
+        models = ['CHAP_A', 'CHAP_B', 'CHAP_C']
         perform_ensemble = True
     else:
         models = [model]
@@ -129,16 +129,16 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                 logger.info('Completed prediction generation for the subject {}'.format(subject_id))
 
     if perform_ensemble:
-        if not os.path.exists(os.path.join(output_dir, 'CHAP_ACT')):
-            os.makedirs(os.path.join(output_dir, 'CHAP_ACT'))
+        if not os.path.exists(os.path.join(output_dir, 'CHAP')):
+            os.makedirs(os.path.join(output_dir, 'CHAP'))
 
         for subject_id in subject_ids:
             if not args.silent:
                 logger.info('Starting enseble model prediction generation for the subject {}'.format(subject_id))
 
-            df_1 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_A/{}.csv".format(subject_id)))
-            df_2 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_B/{}.csv".format(subject_id)))
-            df_3 = pd.read_csv(os.path.join(output_dir, "CHAP_ACT_C/{}.csv".format(subject_id)))
+            df_1 = pd.read_csv(os.path.join(output_dir, "CHAP_A/{}.csv".format(subject_id)))
+            df_2 = pd.read_csv(os.path.join(output_dir, "CHAP_B/{}.csv".format(subject_id)))
+            df_3 = pd.read_csv(os.path.join(output_dir, "CHAP_C/{}.csv".format(subject_id)))
 
             modfied_dfs = []
             if segment:
@@ -181,7 +181,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
 
             if len(modfied_dfs) > 0:
                 user_df = pd.concat(modfied_dfs)
-                user_df.to_csv(os.path.join(output_dir, "CHAP_ACT/{}.csv".format(subject_id)), index=False)
+                user_df.to_csv(os.path.join(output_dir, "CHAP/{}.csv".format(subject_id)), index=False)
             
             if not args.silent:
                 logger.info('Completed enseble model prediction generation for the subject {}'.format(subject_id))
@@ -194,7 +194,8 @@ if __name__ == "__main__":
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
-    optional_arguments.add_argument('--model', help='Pre-trained prediction model name (default: CHAP_ALL_ADULTS)', default='CHAP_ALL_ADULTS', required=False, choices=['CHAP_ACT_A', 'CHAP_ACT_B', 'CHAP_ACT_C', 'CHAP_ACT', 'CHAP_ALL_ADULTS'])
+    optional_arguments.add_argument('--model', help='Pre-trained prediction model name (default: CHAP_ALL_ADULTS)', default='CHAP_ALL_ADULTS',
+        required=False, choices=['CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP', 'CHAP_ALL_ADULTS', 'CHAP_CHILDREN'])
     optional_arguments.add_argument('--predictions-dir', help='Predictions output directory (default: ./predictions)', default='./predictions', required=False) 
     optional_arguments.add_argument('--no-segment', help='Do not output segment number', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--output-label', help='Whether to output the actual label', default=False, required=False, action='store_true')
@@ -217,7 +218,7 @@ if __name__ == "__main__":
     label_map = json.loads(args.activpal_label_map)
     label_map = {label_map[k]:k for k in label_map}
 
-    bi_lstm_window_sizes = {"CHAP_ACT_A": 9, "CHAP_ACT_B": 9, "CHAP_ACT_C": 7, "CHAP_ALL_ADULTS": 7}
+    bi_lstm_window_sizes = {"CHAP_A": 9, "CHAP_B": 9, "CHAP_C": 7, "CHAP_ALL_ADULTS": 7, "CHAP_CHILDREN": 3}
     bi_lstm_window_sizes['CUSTOM_MODEL'] = args.bi_lstm_window_size
 
     if args.model_checkpoint_path is not None:

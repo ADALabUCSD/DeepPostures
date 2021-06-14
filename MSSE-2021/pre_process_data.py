@@ -88,7 +88,9 @@ def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dic
         event_start_times = ap_df['Time'].tolist()
         ap_df['Interval (s)'] = ap_df['Interval (s)'].map(lambda x: timedelta(seconds=round(x * 10) / 10.))
         event_intervals = ap_df['Interval (s)'].tolist()
-        event_labels = ap_df['ActivityCode (0=sedentary, 1= standing, 2=stepping)'].apply(lambda x: label_map[str(x)]).tolist()
+        # Fix for column name inconsistency in ActivPal
+        ap_df = ap_df.rename(columns={'ActivityCode (0=sedentary, 1= standing, 2=stepping)' : 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
+        event_labels = ap_df['ActivityCode (0=sedentary, 1=standing, 2=stepping)'].apply(lambda x: label_map[str(x)]).tolist()
 
     def check_label(pointer, check_time):
         if ap_df is None:
@@ -166,35 +168,38 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
             raise Exception('{} directory contains unsupported file formats.'.format(gt3x_30Hz_csv_dir_root))
 
     # 2. valid_days_file
-    if not os.path.isfile(valid_days_file):
-        raise Exception('file {} does not exist.'.format(valid_days_file))
-    
-    if not valid_days_file.endswith('.csv'):
-        raise Exception('{} is not a csv file.'.format(valid_days_file))
-    
     concurrent_wear_dict = {}
-    with open(valid_days_file) as f:
-        lines = f.readlines()
-        header = lines[0].lower().split(",")[:2]
-        if header[0].strip() != "id" or header[1].strip() != "date.valid.day":
-            raise Exception('valid_days_file should have two header columns (ID, Date.valid.day).')
+    if valid_days_file is None:
+        logger.warning('valid days file is not provided.')
+    else:
+        if not os.path.isfile(valid_days_file):
+            raise Exception('valid days file {} does not exists.'.format(valid_days_file))
 
-        for line in lines[1:]:
-            line = line.strip()
-            if line == "":
-                continue
+        if not valid_days_file.endswith('.csv'):
+            raise Exception('{} is not a csv file.'.format(valid_days_file))
 
-            splits = line.split(",")
-            id = splits[0].strip()
-            d = splits[1].strip()
-            try:
-                d = datetime.strptime(d, '%m/%d/%Y')
-                if id in concurrent_wear_dict:
-                    concurrent_wear_dict[id].append(d)
-                else:
-                    concurrent_wear_dict[id] = [d]
-            except:
-                raise Exception('In {}, Date.valid.day column in should be in %m/%d/%Y format. Found: {}.'.format(valid_days_file, line))
+        with open(valid_days_file) as f:
+            lines = f.readlines()
+            header = lines[0].lower().split(",")[:2]
+            if header[0].strip() != "id" or header[1].strip() != "date.valid.day":
+                raise Exception('valid_days_file should have two header columns (ID, Date.valid.day).')
+
+            for line in lines[1:]:
+                line = line.strip()
+                if line == "":
+                    continue
+
+                splits = line.split(",")
+                id = splits[0].strip()
+                d = splits[1].strip()
+                try:
+                    d = datetime.strptime(d, '%m/%d/%Y')
+                    if id in concurrent_wear_dict:
+                        concurrent_wear_dict[id].append(d)
+                    else:
+                        concurrent_wear_dict[id] = [d]
+                except:
+                    raise Exception('In {}, Date.valid.day column in should be in %m/%d/%Y format. Found: {}.'.format(valid_days_file, line))
 
     # 3. sleep_logs_file
     sleep_logs_dict = {}
@@ -280,7 +285,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
             raise Exception('When n_start_ID is specified n_end_ID should also be specified. n_end_ID should be'
                             ' an integer greater than n_start_ID.')
         if expression_after_ID is not None and not args.silent:
-            logger.warn('Both n_start_ID and expression_after_ID specified. expression_after_ID will be ignored.')
+            logger.warning('Both n_start_ID and expression_after_ID specified. expression_after_ID will be ignored.')
     elif expression_after_ID is not None:
         if not isinstance(expression_after_ID, str) and \
             not (isinstance(expression_after_ID, list) and all(isinstance(x, str) for x in expression_after_ID)):
@@ -311,22 +316,21 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                     x_new = splits[0]
                     break
             if x_new == x and not args.silent:
-                logger.warn('expression_after_ID based splitting resulted no change for the gt3x file name: {}.csv'.format(x))
+                logger.warning('expression_after_ID based splitting resulted no change for the gt3x file name: {}.csv'.format(x))
             subject_ids.append(x_new)
     else:
         subject_ids = gt3x_file_names
 
-    for subject_id in subject_ids:
-        if len(concurrent_wear_dict) > 0 and subject_id not in concurrent_wear_dict:
-            raise Exception('Did not find valid days records for the subject {}'.format(subject_id))
-
     for subject_id, file_name in zip(subject_ids, gt3x_file_names):
         try:
+            if len(concurrent_wear_dict) > 0 and subject_id not in concurrent_wear_dict:
+                logger.warning('Did not find valid days records for the subject {}'.format(subject_id))
+
             with open(os.path.join(gt3x_30Hz_csv_dir_root, '{}.csv'.format(file_name))) as fin:
                 if len(non_wear_dict) > 0 and subject_id not in non_wear_dict and not args.silent:
-                    logger.warn('Did not find non-wear records for the subject {}'.format(subject_id))
+                    logger.warning('Did not find non-wear records for the subject {}'.format(subject_id))
                 if len(sleep_logs_dict) > 0 and subject_id not in sleep_logs_dict and not args.silent:
-                    logger.warn('Did not find sleep log records for the subject {}'.format(subject_id))
+                    logger.warning('Did not find sleep log records for the subject {}'.format(subject_id))
 
                 if not args.silent:
                     logger.info('Starting pre-processing for the subject {}'.format(subject_id))
@@ -354,12 +358,12 @@ if __name__ == "__main__":
     optional_arguments = parser._action_groups.pop()
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--gt3x-dir', help='GT3X data directory', required=True)
-    required_arguments.add_argument('--valid-days-file', help='Path to the valid days file', required=True)
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
+    optional_arguments.add_argument('--valid-days-file', help='Path to the valid days file', required=False)
     optional_arguments.add_argument('--sleep-logs-file', help='Path to the sleep logs file', required=False)
     optional_arguments.add_argument('--non-wear-times-file', help='Path to non wear times file', required=False)
-    required_arguments.add_argument('--activpal-dir', help='ActivPAL data directory',  default=None, required=False)
+    optional_arguments.add_argument('--activpal-dir', help='ActivPAL data directory',  default=None, required=False)
     optional_arguments.add_argument('--n-start-id', help='The index of the starting character of the ID in gt3x file names. Indexing starts with 1. \
                         If specified `n_end_ID` should also be specified. I both `n_start_ID` and `expression_after_ID` is \
                         specified, the latter will be ignored', type=int, required=False)
