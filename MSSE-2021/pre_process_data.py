@@ -118,19 +118,17 @@ def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dic
     for i in range(0, len(lines), int(GT3X_FREQUENCY * RESOLUTION)):
         acc = np.array([[float(x) for x in l.split(',')] for l in lines[i:i + int(GT3X_FREQUENCY * RESOLUTION)]])
         acc = np.mean(acc, axis=0)
-        next_time = current_time + timedelta(seconds=RESOLUTION)
         pointer, label = check_label(pointer, current_time)
         values.append([current_time, acc[0], acc[1], acc[2], check_non_wear(subject_id, current_time), check_sleeping(subject_id, current_time), label])
-        current_time = next_time
 
+        current_time = current_time + timedelta(seconds=RESOLUTION)
         # Flush all values for a single day
         if current_time.date() > unflushed_start_date:
-            values_being_written = values[:-1] # -1 to skip the last value that is being written
-            values = values[-1:]
-            if len(values_being_written) >= int(CNN_WINDOW_SIZE / RESOLUTION):
-                write_data_to_file(pre_process_data_output_dir, subject_id, unflushed_start_date, values_being_written, CNN_WINDOW_SIZE, RESOLUTION)
+            if len(values) >= int(CNN_WINDOW_SIZE / RESOLUTION):
+                write_data_to_file(pre_process_data_output_dir, subject_id, unflushed_start_date, values, CNN_WINDOW_SIZE, RESOLUTION)
             unflushed_start_date = current_time.date()
             gc.collect()
+            values = []
 
     # Final flush
     if len(values) >= int(CNN_WINDOW_SIZE / RESOLUTION):
