@@ -23,7 +23,10 @@ def input_iterator(data_root, subject_id, train=False):
     fnames.sort()
     for i in range(len(fnames) - 1):
         assert datetime.strptime(fnames[i+1], "%Y-%m-%d").date() - datetime.strptime(fnames[i], "%Y-%m-%d").date() == timedelta(days=1)
-    
+
+    data_batch = []
+    timestamps_batch = []
+    label_batch = []
     for fname in fnames:
         h5f = h5py.File(os.path.join(data_root, subject_id,  '{}.h5'.format(fname)), 'r')
         timestamps = h5f.get('time')[:]
@@ -31,10 +34,7 @@ def input_iterator(data_root, subject_id, train=False):
         sleeping = h5f.get('sleeping')[:]
         non_wear = h5f.get('non_wear')[:]
         label = h5f.get('label')[:]
-
-        data_batch = []
-        timestamps_batch = []
-        label_batch = []
+        
         for d, t, s, nw, l in zip(data, timestamps, sleeping, non_wear, label):
             if train and l == -1:
                 raise Exception('Missing ground truth label information in pre-processed data')
