@@ -50,10 +50,10 @@ def input_iterator(data_root, subject_id, train=False):
             timestamps_batch.append(t)
             label_batch.append(l)
     
-        if len(timestamps_batch) > 0:
-            yield np.array(data_batch), np.array(timestamps_batch), np.array(label_batch)
-
         h5f.close()
+
+    if len(timestamps_batch) > 0:
+        yield np.array(data_batch), np.array(timestamps_batch), np.array(label_batch)
 
 
 def cnn_bi_lstm_model(x, amp_factor, bil_lstm_win_size, num_classes):
