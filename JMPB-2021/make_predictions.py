@@ -18,7 +18,13 @@ import sys
 import json
 import pandas as pd
 import numpy as np
-import tensorflow as tf
+
+import tensorflow
+if int(tensorflow.__version__.split(".")[0]) == 2:
+    import tensorflow.compat.v1 as tf
+else:
+    import tensorflow as tf
+
 import argparse
 
 sys.path.append('./')

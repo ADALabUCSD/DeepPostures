@@ -16,7 +16,14 @@
 import os
 import sys
 import numpy as np
-import tensorflow as tf
+
+import tensorflow
+if int(tensorflow.__version__.split(".")[0]) == 2:
+    import tensorflow.compat.v1 as tf
+else:
+    import tensorflow as tf
+
+
 import pandas as pd
 import random
 import math

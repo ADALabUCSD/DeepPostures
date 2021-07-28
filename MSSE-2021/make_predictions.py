@@ -20,7 +20,13 @@ import pathlib
 import logging
 import numpy as np
 import pandas as pd
-import tensorflow as tf
+
+import tensorflow
+if int(tensorflow.__version__.split(".")[0]) == 2:
+    import tensorflow.compat.v1 as tf
+else:
+    import tensorflow as tf
+
 from datetime import datetime
 import multiprocessing
 import argparse
