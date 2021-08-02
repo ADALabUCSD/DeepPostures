@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 import tensorflow
-if int(tensorflow.__version__.split(".")[0]) == 2:
+if int(tensorflow.__version__.split(".")[0]) >= 2:
     import tensorflow.compat.v1 as tf
 else:
     import tensorflow as tf

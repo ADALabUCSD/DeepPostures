@@ -59,7 +59,7 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
     h5f_out.close()
 
 
-def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map):
+def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map):
     RESOLUTION = 1/float(args.down_sample_frequency) # seconds
     GT3X_FREQUENCY = args.gt3x_frequency  # Hz
     CNN_WINDOW_SIZE = args.window_size  # seconds
@@ -110,13 +110,24 @@ def map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dic
         os.makedirs(os.path.join(pre_process_data_output_dir, subject_id))
 
     values = []
+    gt3x_lines = [gt3x_file.readline() for _ in range(11)]
     start_time = gt3x_lines[3][11:].strip() + " " + gt3x_lines[2][11:].strip()
     current_time = datetime.strptime(start_time, "%m/%d/%Y %H:%M:%S")
     unflushed_start_date = current_time.date()
-    lines = [x[:-1] for x in gt3x_lines[11:]]
     pointer = 0
-    for i in range(0, len(lines), int(GT3X_FREQUENCY * RESOLUTION)):
-        acc = np.array([[float(x) for x in l.split(',')] for l in lines[i:i + int(GT3X_FREQUENCY * RESOLUTION)]])
+
+    while True:
+        lines = []
+        while len(lines) < int(GT3X_FREQUENCY * RESOLUTION):
+            l = gt3x_file.readline()
+            if len(l) == 0:
+                break
+            lines.append(l)
+
+        if len(lines) < int(GT3X_FREQUENCY * RESOLUTION):
+            break
+
+        acc = np.array([[float(x) for x in l.split(',')] for l in lines])
         acc = np.mean(acc, axis=0)
         pointer, label = check_label(pointer, current_time)
         values.append([current_time, acc[0], acc[1], acc[2], check_non_wear(subject_id, current_time), check_sleeping(subject_id, current_time), label])
@@ -332,14 +343,13 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
 
                 if not args.silent:
                     logger.info('Starting pre-processing for the subject {}'.format(subject_id))
-                gt3x_lines = fin.readlines()
 
                 if activpal_events_csv_dir_root:
                     ap_df = pd.read_csv(os.path.join(activpal_events_csv_dir_root, '{}.csv'.format(file_name)))
                 else:
                     ap_df = None
 
-                map_function(gt3x_lines, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
+                map_function(fin, concurrent_wear_dict, sleep_logs_dict, non_wear_dict, pre_process_data_output_dir, subject_id, ap_df, label_map)
                 if not args.silent:
                     logger.info('Completed pre-processing for the subject {}'.format(subject_id))
         except Exception as e:
