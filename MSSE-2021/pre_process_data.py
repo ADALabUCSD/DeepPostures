@@ -112,8 +112,7 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, non_wear_dict
     values = []
     gt3x_lines = [gt3x_file.readline().rstrip() for _ in range(11)]
     start_time = gt3x_lines[3][11:].strip() + " " + gt3x_lines[2][11:].strip()
-    current_time = datetime.strptime(start_time, "%m/%d/%Y %H:%M:%S")
-    current_time = current_time.replace(tzinfo=None)
+    current_time = datetime.strptime(start_time + " UTC", "%m/%d/%Y %H:%M:%S %Z")
     unflushed_start_date = current_time.date()
     pointer = 0
 
