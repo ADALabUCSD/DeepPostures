@@ -5,7 +5,8 @@
   - [Generating Predictions from Pre-Trained Models](#generating-predictions-from-pre-trained-models)
   - [Training Your Own Model](#training-your-own-model)
   - [Generating Predictions using a Custom-Trained Model](#generating-predictions-using-a-custom-trained-model)
-   
+  - [Parallelizing the Code](#parallelizing-the-code)
+  
 ## Data
 - **Accelerometer Data**: We assume the input data is obtained from ActiGraph GT3X device and converted into single .csv files. The files should be named as **<subject_id>.csv** and files for all subjects should be put in the same directory. First few lines of a sample csv file are as follows:
     ~~~
@@ -314,3 +315,23 @@ Complete usage details of `make_predictions.pu` script with all overiding config
                             ActivPal label vocabulary (default: {"sitting": 0,
                             "not-sitting": 1, "no-label": -1})
     --silent              Whether to hide info messages
+
+
+## Parallelizing the Code
+The `pre_process_data.py` script is operated in sequential mode (i.e., it will finish pre-processing data for a single subject before proceeding to the next subject). If the user has access to a multi-core machine, we recommend that they run multiple invocations of the `pre_process_data.py` script where each invocation operates on its directory containing GT3X accelerometer data. To do so users will have to first split the accelerometer data into multiple sub-directories. The multiple invocations of pre_process_data.py can still reuse the same other configurations files (e.g., sleep logs) and also the final pre-processed output directory. An example is shown below:
+
+
+```
+python pre_process_data.py --gt3x-dir ./gt3x_dir_1 --pre-processed-dir ./pre-processed --sleep-logs-file ./sleep_logs.csv &
+python pre_process_data.py --gt3x-dir ./gt3x_dir_2 --pre-processed-dir ./pre-processed --sleep-logs-file ./sleep_logs.csv &
+python pre_process_data.py --gt3x-dir ./gt3x_dir_3 --pre-processed-dir ./pre-processed --sleep-logs-file ./sleep_logs.csv &
+
+wait
+```
+
+The number of parallel invocations to be performed for the `pre_process_data.py` script depends both on the number of cores available in the machine and the available memory. This number can be as high as the number of CPU cores available in a machine. However, the user has to ensure that the aggregate memory consumption by all invocations does not exceed the total available system memory.
+
+The `make_predictions.py` script uses all available CPU cores in a machine. Thus, users do not need to explicitly parallelize this script's invocation.
+
+
+
