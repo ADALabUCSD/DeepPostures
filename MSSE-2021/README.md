@@ -5,7 +5,7 @@
   - [Generating Predictions from Pre-Trained Models](#generating-predictions-from-pre-trained-models)
   - [Training Your Own Model](#training-your-own-model)
   - [Generating Predictions using a Custom-Trained Model](#generating-predictions-using-a-custom-trained-model)
-  - [Parallelizing the Code](#parallelizing-the-code)
+  - [Parallelizing the Code Execution](#parallelizing-the-code-execution)
   
 ## Data
 - **Accelerometer Data**: We assume the input data is obtained from ActiGraph GT3X device and converted into single .csv files. The files should be named as **<subject_id>.csv** and files for all subjects should be put in the same directory. First few lines of a sample csv file are as follows:
@@ -317,7 +317,7 @@ Complete usage details of `make_predictions.pu` script with all overiding config
     --silent              Whether to hide info messages
 
 
-## Parallelizing the Code
+## Parallelizing the Code Execution
 The `pre_process_data.py` script is operated in sequential mode (i.e., it will finish pre-processing data for a single subject before proceeding to the next subject). If the user has access to a multi-core machine, we recommend that they run multiple invocations of the `pre_process_data.py` script where each invocation operates on a separate directory containing GT3X accelerometer data. To do so users will have to first split the accelerometer data into multiple sub-directories. The multiple invocations of `pre_process_data.py` script can still reuse the same other configurations files (e.g., sleep logs) and also the final pre-processed output directory. An example is shown below:
 
 
