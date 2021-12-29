@@ -71,7 +71,7 @@ if __name__ == "__main__":
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
 
-    optional_arguments.add_argument('--transfer-learning-model', help='Transfer learning model name (default: CHAP_ALL_ADULTS)', default=None, required=False, choices=['CHAP_ALL_ADULTS'])
+    optional_arguments.add_argument('--transfer-learning-model', help='Transfer learning model name (default: CHAP_ALL_ADULTS)', default=None, required=False, choices=['CHAP_ALL_ADULTS', 'CHAP_AUSDIAB', 'NONE'])
     optional_arguments.add_argument('--learning-rate', help='Learning rate for training the model (default: 0.0001)', default=1e-4, type=float, required=False)
     optional_arguments.add_argument('--num-epochs', help='Number of epochs to train the model (default: 15)', default=15, type=int, required=False)
     optional_arguments.add_argument('--batch-size', help='Training batch size (default: 16)', default=16, type=int, required=False)
