@@ -117,7 +117,10 @@ if __name__ == "__main__":
     train_subjects = subject_ids[:n_train_subjects]
     subject_ids = subject_ids[n_train_subjects:]
 
-    test_frac = args.testing_data_fraction / (100.0 - args.training_data_fraction) * 100
+    if (100.0 - args.training_data_fraction) > 0:
+        test_frac = args.testing_data_fraction / (100.0 - args.training_data_fraction) * 100
+    else:
+        test_frac = 0.0
     n_test_subjects = int(math.ceil(len(subject_ids) * test_frac / 100.))
     test_subjects = subject_ids[:n_test_subjects]
     valid_subjects = subject_ids[n_test_subjects:]    
