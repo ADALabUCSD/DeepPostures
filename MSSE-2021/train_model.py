@@ -129,16 +129,31 @@ if __name__ == "__main__":
     bi_lstm_win_size = 60//args.down_sample_frequency * args.bi_lstm_window_size
     train_dataset = tf.data.Dataset.from_generator(lambda: window_generator(args.pre_processed_dir, bi_lstm_win_size, train_subjects),output_types=(tf.float32, tf.int32),
                 output_shapes=output_shapes).shuffle(args.shuffle_buffer_size).batch(args.batch_size).prefetch(10)
-    valid_dataset = tf.data.Dataset.from_generator(lambda: window_generator(args.pre_processed_dir, bi_lstm_win_size, valid_subjects),output_types=(tf.float32, tf.int32),
+    if valid_subjects:
+        valid_dataset = tf.data.Dataset.from_generator(lambda: window_generator(args.pre_processed_dir, bi_lstm_win_size, valid_subjects),output_types=(tf.float32, tf.int32),
                 output_shapes=output_shapes).batch(args.batch_size).prefetch(10)
-    test_dataset = tf.data.Dataset.from_generator(lambda: window_generator(args.pre_processed_dir, bi_lstm_win_size, test_subjects),output_types=(tf.float32, tf.int32),
+    else:
+        valid_dataset = None
+
+    if test_subjects:
+        test_dataset = tf.data.Dataset.from_generator(lambda: window_generator(args.pre_processed_dir, bi_lstm_win_size, test_subjects),output_types=(tf.float32, tf.int32),
                 output_shapes=output_shapes).batch(args.batch_size).prefetch(10)
+    else:
+        test_dataset = None
     
     iterator =  tf.data.Iterator.from_structure(train_dataset.output_types, train_dataset.output_shapes)
 
     train_init_op = iterator.make_initializer(train_dataset)
-    valid_init_op = iterator.make_initializer(valid_dataset)
-    test_init_op = iterator.make_initializer(test_dataset)
+    if valid_dataset:
+        valid_init_op = iterator.make_initializer(valid_dataset)
+    else:
+        valid_init_op = None
+
+    if test_dataset:
+        test_init_op = iterator.make_initializer(test_dataset)
+    else:
+        test_init_op = None
+
     x, y = iterator.get_next()
     
     x = tf.reshape(x, [-1, args.cnn_window_size*args.down_sample_frequency, 3, 1])
@@ -171,6 +186,10 @@ if __name__ == "__main__":
         for epoch in range(args.num_epochs):
             for label, init_op, subjects in zip(["Train", "Validation", "Test"],
                 [train_init_op, valid_init_op, test_init_op], [train_subjects, valid_subjects, test_subjects]):
+                
+                if init_op is None:
+                    continue
+
                 sess.run(tf.local_variables_initializer())
                 sess.run(init_op)
                 losses = []
