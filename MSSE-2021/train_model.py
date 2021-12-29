@@ -101,7 +101,7 @@ if __name__ == "__main__":
             args.amp_factor = 2
             args.cnn_window_size = 10
             args.bi_lstm_win_size = 7
-        else:
+        elif args.transfer_learning_model == 'NONE':
             raise Exception('Unsupported transfer learning model: {}'.format(args.transfer_learning_model))
     
     assert (args.training_data_fraction + args.validation_data_fraction + args.testing_data_fraction) == 100, 'Train, validation,test split fractions should add up to 100%'
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
-        if args.transfer_learning_model:
+        if args.transfer_learning_model == 'CHAP_ALL_ADULTS':
             ckpt_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models', '{}_CKPT'.format(args.transfer_learning_model), 'model')
             # Weights for the final classification layer (dense) are ignored
             variables = [v for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) if not v.name.startswith('dense/')]
