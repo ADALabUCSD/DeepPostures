@@ -192,7 +192,7 @@ To train your own model invoke the `train_model.py` as follows:
 Complete usage details of this script are as follows:
 
     usage: train_model.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                        [--transfer-learning-model {CHAP_ALL_ADULTS}]
+                        [--transfer-learning-model {CHAP_ALL_ADULTS, NONE}]
                         [--learning-rate LEARNING_RATE]
                         [--num-epochs NUM_EPOCHS] [--batch-size BATCH_SIZE]
                         [--amp-factor AMP_FACTOR]
@@ -216,7 +216,7 @@ Complete usage details of this script are as follows:
 
     optional arguments:
     -h, --help            show this help message and exit
-    --transfer-learning-model {CHAP_ALL_ADULTS}
+    --transfer-learning-model {CHAP_ALL_ADULTS, NONE}
                             Transfer learning model name (default:
                             CHAP_ALL_ADULTS)
     --learning-rate LEARNING_RATE
