@@ -60,8 +60,8 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     """
 
     model = model.strip()
-    if model not in ['CHAP', 'CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP_ALL_ADULTS', 'CHAP_CHILDREN', 'CUSTOM_MODEL']:
-        raise Exception('model should be one of: CHAP, CHAP_A, CHAP_B, CHAP_C, CHAP_ALL_ADULTS, CHAP_CHILDREN or CUSTOM_MODEL')
+    if model not in ['CHAP', 'CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP_ALL_ADULTS', 'CHAP_CHILDREN', 'CHAP_AUSDIAB', 'CUSTOM_MODEL']:
+        raise Exception('model should be one of: CHAP, CHAP_A, CHAP_B, CHAP_C, CHAP_ALL_ADULTS, CHAP_CHILDREN, CHAP_AUSDIAB or CUSTOM_MODEL')
 
     subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir) if not fname.startswith('.')]
 
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     required_arguments.add_argument('--pre-processed-dir', help='Pre-processed data directory', required=True)
     
     optional_arguments.add_argument('--model', help='Pre-trained prediction model name (default: CHAP_ALL_ADULTS)', default='CHAP_ALL_ADULTS',
-        required=False, choices=['CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP', 'CHAP_ALL_ADULTS', 'CHAP_CHILDREN'])
+        required=False, choices=['CHAP_A', 'CHAP_B', 'CHAP_C', 'CHAP', 'CHAP_ALL_ADULTS', 'CHAP_CHILDREN', 'CHAP_AUSDIAB'])
     optional_arguments.add_argument('--predictions-dir', help='Predictions output directory (default: ./predictions)', default='./predictions', required=False) 
     optional_arguments.add_argument('--no-segment', help='Do not output segment number', default=False, required=False, action='store_true')
     optional_arguments.add_argument('--output-label', help='Whether to output the actual label', default=False, required=False, action='store_true')
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     label_map = json.loads(args.activpal_label_map)
     label_map = {label_map[k]:k for k in label_map}
 
-    bi_lstm_window_sizes = {"CHAP_A": 9, "CHAP_B": 9, "CHAP_C": 7, "CHAP_ALL_ADULTS": 7, "CHAP_CHILDREN": 3}
+    bi_lstm_window_sizes = {"CHAP_A": 9, "CHAP_B": 9, "CHAP_C": 7, "CHAP_ALL_ADULTS": 7, "CHAP_CHILDREN": 3, "CHAP_AUSDIAB": 9}
     bi_lstm_window_sizes['CUSTOM_MODEL'] = args.bi_lstm_window_size
 
     if args.model_checkpoint_path is not None:
