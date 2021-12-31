@@ -105,7 +105,7 @@ if __name__ == "__main__":
             args.amp_factor = 4
             args.cnn_window_size = 10
             args.bi_lstm_win_size = 9
-        elif args.transfer_learning_model == 'NONE':
+        elif args.transfer_learning_model != 'NONE':
             raise Exception('Unsupported transfer learning model: {}'.format(args.transfer_learning_model))
     
     assert (args.training_data_fraction + args.validation_data_fraction + args.testing_data_fraction) == 100, 'Train, validation,test split fractions should add up to 100%'
