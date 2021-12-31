@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
     optional_arguments.add_argument('--model-checkpoint-path', help='Path where the custom trained model checkpoint is located', default=None, required=False)
     optional_arguments.add_argument('--cnn-window-size', help='CNN window size of the model in seconds on which the predictions to be made (default: 10).', default=10, type=int, required=False)
-    optional_arguments.add_argument('--bi-lstm-window-size', help='BiLSTM window size in minutes (default: 7).', default=7, required=False)
+    optional_arguments.add_argument('--bi-lstm-window-size', help='BiLSTM window size in minutes (default: 7).', default=7, required=False, type=int)
     optional_arguments.add_argument('--down-sample-frequency', help='Downsample frequency in Hz for GT3X data (default: 10).', default=10, type=int, required=False)   
     optional_arguments.add_argument('--gt3x-frequency', help='GT3X device frequency in Hz (default: 30)', default=30, type=int, required=False)
     optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary (default: {"sitting": 0, "not-sitting": 1, "no-label": -1})', default='{"sitting": 0, "not-sitting": 1, "no-label": -1}', required=False)
