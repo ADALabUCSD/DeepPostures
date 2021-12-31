@@ -100,11 +100,11 @@ if __name__ == "__main__":
         if args.transfer_learning_model == 'CHAP_ALL_ADULTS':
             args.amp_factor = 2
             args.cnn_window_size = 10
-            args.bi_lstm_win_size = 7
+            args.bi_lstm_window_size = 7
         elif args.transfer_learning_model == 'CHAP_AUSDIAB':
             args.amp_factor = 4
             args.cnn_window_size = 10
-            args.bi_lstm_win_size = 9
+            args.bi_lstm_window_size = 9
         elif args.transfer_learning_model != 'NONE':
             raise Exception('Unsupported transfer learning model: {}'.format(args.transfer_learning_model))
     
