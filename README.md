@@ -15,13 +15,15 @@ We recommend first [installing Anaconda](https://docs.anaconda.com/anaconda/inst
     conda activate deep_postures
 
 
-Alternatively, you can manually install Python 3 and use `pip` to install the following python packages.
-
-    pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
-    pip install pandas
-    pip install numpy
-    pip install scipy
-    pip install h5py
+Alternatively, you can use conda to install Python 3 and use `pip` to install the following rerquired packages.
+    
+    conda create -n deep_postures python=3.6
+    conda activate deep_postures
+    python -m pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
+    python -m pip install pandas
+    python -m pip install numpy
+    python -m pip install scipy
+    python -m pip install h5py
 
 
 Instructions
