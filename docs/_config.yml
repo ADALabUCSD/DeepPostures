@@ -1,6 +1,6 @@
 # github-pages mandatory configuration
 domain: adalabucsd.github.io
-url: https://adalabucsd.github.io/
+url: https://adalabucsd.github.io
 baseurl: /DeepPostures/
 repository: adalabucsd/DeepPostures
 
