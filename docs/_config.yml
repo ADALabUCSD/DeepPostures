@@ -1,8 +1,8 @@
 # github-pages mandatory configuration
-domain: yhzhang.info
-url: https://yhzhang.info
+domain: adalabucsd.github.io
+url: https://adalabucsd.github.io/
 baseurl: /DeepPostures/
-repository: makemebitter/DeepPostures
+repository: adalabucsd/DeepPostures
 
 
 remote_theme: just-the-docs/just-the-docs
