@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Dataset and Models
+title: Datasets and Models
 nav_order: 3
 ---
 
-# Dataset and Models
+# Datasets and Models
 {: .no_toc }
 
 ## Table of contents
@@ -15,7 +15,7 @@ nav_order: 3
 
 ---
 
-## Dataset
+## Datasets
 
 ### About
 

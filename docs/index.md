@@ -21,11 +21,11 @@ A brief introduction about the entire project. Figures showing what the problem 
 
 
 ## Dataset
-A brief description of the dataset. How it's collected and how we used it. Details are in [Dataset and Models]({{ site.baseurl }}{% link dataset_and_models.md %}) 
+A brief description of the dataset. How it's collected and how we used it. Details are in [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %}) 
 
 
 ## Models
-A brief introduction to the model(s). What is the architechure and how we trained them. Details are in [Dataset and Models]({{ site.baseurl }}{% link dataset_and_models.md %})
+A brief introduction to the model(s). What is the architechure and how we trained them. Details are in [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %})
 
 ## Acknowledgement
 

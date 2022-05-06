@@ -9,4 +9,4 @@ permalink: getting_started
 # Getting Started
 {: .no_toc }
 
-We will now go over the steps to setup your environment, install and use DeepPostures. The library is written in Python and relies on TensorFlow for deep learning.  
+We will now go over the steps to setup your environment, install and use DeepPostures. The library is written in Python and relies on TensorFlow for deep learning. It can be used on multiple platforms (Linux, macOS, and Windows) as long as Python and TensorFlow are avaliable. 

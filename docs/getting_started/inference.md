@@ -7,7 +7,7 @@ parent: Getting Started
 # Generating Predictions from Pre-Trained Models
 {: .no_toc }
 
-You can use the released [pre-trained models]({{ site.baseurl }}{% link dataset_and_models.md %}#Pre-trained Models) to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
+You can use the released [pre-trained models]({{ site.baseurl }}{% link datasets_and_models.md %}#Pre-trained Models) to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
     
     python make_predictions.py --pre-processed-dir <pre_processed_data_dir>
 
