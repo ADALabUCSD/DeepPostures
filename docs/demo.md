@@ -18,8 +18,9 @@ Here are some videos.
 ---
 
 
-## Installation 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/oznr-1-poSU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+## End-to-end tutorial 
+Including installation and basic usage, open CC before watching.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/EHaBP3VhuO8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Usage
+## GUI Demo
 <iframe width="560" height="315" src="https://www.youtube.com/embed/oznr-1-poSU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
