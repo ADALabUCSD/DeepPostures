@@ -17,23 +17,27 @@ DeepPostures is a library containing deep learning methods for identifying human
 ---
 
 ## About
-A brief introduction about the entire project. Figures showing what the problem is and how we approach them.
+TODO: A brief introduction about the entire project. 
 
+<img src="Illustration.jpeg" width="700">
 
-## Dataset
-A brief description of the dataset. How it's collected and how we used it. Details are in [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %}) 
+## Datasets
+TODO: A brief description of the dataset. How it's collected and how we used it. 
 
 
 ## Models
-A brief introduction to the model(s). What is the architechure and how we trained them. Details are in [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %})
+TODO: A brief introduction to the model(s). What is the architechure and how we trained them. 
 
-## Acknowledgement
+More details are available at [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %}) 
 
-This work was supported by grant number R01DK114945 from the National Institute of Diabetes and Digestive and Kidney Diseases. It was also supported in part by a Hellman Fellowship, an NSF CAREER Award under award number 1942724, and a gift from VMware. The content is solely the responsibility of the authors and does not necessarily represent the views of any of these organizations. We thank the members of UC San Diego's Database Lab and Center for Networked Systems for their feedback on this work.
+
+## Acknowledgements
+
+This work was supported by grant number R01DK114945 from the National Institute of Diabetes and Digestive and Kidney Diseases. It was also supported in part by a Hellman Fellowship, an NSF CAREER Award under award number 1942724, and gifts from VMware. 
 
 ## License
 
-DeepPostures is distributed by an [Apache-2.0 license](https://github.com/ADALabUCSD/DeepPostures/blob/master/LICENSE).
+DeepPostures is distributed under [Apache License v2.0](https://github.com/ADALabUCSD/DeepPostures/blob/master/LICENSE).
 
 <!-- ### Contributing
 
