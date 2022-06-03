@@ -33,8 +33,8 @@ Data for the CHAP-CHILD model came from  the Patterns of Habitual Activity acros
 |Training Dataset | Description                                             |
 |-----------------|---------------------------------------------------------|
 |ACT              | ACT is a cohort of community dwelling older adults age 65+. At time of accelerometer wear, the sample had a mean age of 76.7 years and was approximately 59% female and 90% non-Hispanic White.|
-|AUSDIAB          | AUSDIAB is a cohort of older adults. At time of accelerometer wear, the sample had a mean age of 58.3 years and was approximately 56% female.| 
-|PHASE            | PHASE is a cohort of children. At time of accelerometer wear, the sample had a mean age of x years and was approximately x female.| 
+|AusDiab          | AusDiab is a population-based epidemiologic cohort of adults 35+ years in Australia. At time of accelerometer wear, the sample had a mean age of 58.3 years and was approximately 56% female.| 
+|PHASE            | PHASE is a cohort of children ages 8 - 11 years in Australia. At time of accelerometer wear, the sample had a mean age of 10.5 years and was approximately 51% female.| 
 
 
 
