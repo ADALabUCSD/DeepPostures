@@ -16,19 +16,10 @@ DeepPostures is a library containing deep learning methods for identifying human
 
 ---
 
-## About
-TODO: A brief introduction about the entire project. 
-
+## About 
 <img src="Illustration.jpeg" width="700">
 
-## Datasets
-TODO: A brief description of the dataset. How it's collected and how we used it. 
-
-
-## Models
-TODO: A brief introduction to the model(s). What is the architechure and how we trained them. 
-
-More details are available at [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %}) 
+Sedentary behavior (SB), especially in long uninterrupted bouts, is linked to all-cause mortality, cardiovascular disease (CVD), cancer, and type 2 diabetes outcomes. However, specific SB policy recommendations remain elusive due to ongoing debate about how to measure the quantity, domain, and temporal accumulation patterns of SB in relation to health outcomes. Wearable accelerometer sensors can collect data at fine granularity (e.g., 30Hz), making them useful for rich, nuanced SB assessment. Most studies quantify SB using energy-expenditure based cut-point calibration of hip- or wrist-worn accelerometers,  but this approach does not capture the postural component, i.e., sitting versus standing or moving, and in particular has poor accuracy for capturing postural changes. This leads to overestimation of breaks in sedentary time (i.e., transitioning out of a sedentary bout) and underestimation of sedentary bout durations. In this project we aimed to use deep learning methods to predict sitting versus non-sitting postures from raw triaxial accelerometer (i.e., Actigraph) time-series outputs, with the ultimate goal of improving measurement of sedentary (specifically sitting) time  and SB patterns, thereby obtaining more valid and precise estimates of associations between SB and health. 
 
 
 ## Acknowledgements

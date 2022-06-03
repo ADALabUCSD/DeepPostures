@@ -6,6 +6,7 @@ nav_order: 3
 
 # Datasets and Models
 {: .no_toc }
+We developed two deep-learned posture classifiers, one for adults aged 35 years and older, a second for children aged 8 - 11 years. These models were named CHAP-ADULT and CHAP-CHILD, respectively. 
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -17,7 +18,17 @@ nav_order: 3
 
 ## Datasets
 
+
 ### About
+
+#### Adult Dataset
+Data for the CHAP-ADULT model came from two distinct studies: the Australian Diabetes, Obesity, and Lifestyle study (AusDiab) and the Adult Changes in Thought (ACT) study. AusDiab is a population-based epidemiologic cohort, initiated in 1999,  that  enrolled adults aged 25 years and older throughout Australia; the data for our study comprised a sub-sample of 1,014 ambulatory community-living participants who in 2011 were invited to join an ancillary activity monitor study. Participants were asked to wear the activPAL3TM (thigh) and the Actigraph GT3X+ (hip) for 7 consecutive days, with the ActiGraph removed for sleeping and the activPAL worn continuously. ACT is an ongoing longitudinal cohort study, initiated in 1994,  investigating risk factors for development of dementia and a wide range of cognitive and noncognitive factors of healthy aging. ACT recruited dementia-free adults age 65 years and older from random samples of the membership of Group Health Cooperative (now Kaiser Permanente Washington) in King County, Washington, USA . Starting in 2016, ACT participants were invited to participate in an activity monitoring sub-study (ACT-AM). Those who were eligible (ambulatory, no recent critical illness diagnosis) and provided consent to participate were invited to wear an ActiGraph GT3X+ accelerometer on the hip, an activPAL micro3 on the thigh, or, if willing, both simultaneously, continuously for 7 consecutive days. The sample of 1001 ACT participants who agreed to wear both devices comprise the dataset for our study. Protocols for both studies were approved by their respective institutional ethics and review boards. To develop and test the posture classification models, we leveraged data from 1397 participants (n=688 AusDiab; n=709 ACT) of these  two cohort studies who concurrently wore and had valid data on ActiGraph and activPAL accelerometers for up to 7 days while going about their usual (i.e., free-living) behavior pattern. Models were developed to predict sitting versus not-sitting for the Actigraph time series outputs, using the activPAL posture labels (sitting versus not-sitting) as the criterion measure.  We randomly split this sample into a training set (n=978) for model development and selection, and a test set (n=419) for independent model evaluation.
+
+#### Child Dataset
+Data for the CHAP-CHILD model came from  the Patterns of Habitual Activity across SEasons (PHASE) Study, which recruited students in Years 4 and 5 (ages 8 - 11 years) in the Melbourne (Australia) vicinity to evaluate seasonal variation in physical activity behavior across socio-economic and male/female categories.  Each participant was asked to complete a physical activity assessment (simultaneous wear of the ActiGraph and activPAL) in the winter, spring, summer, and fall. Parental consent was obtained and the study protocol was approved by the participating institutional review boards. The sample used for this project  comprised 718 participant-seasons from 278 participants (mean of 2.6 seasons per participant due to data loss and noncompliance). Participants were randomly divided into the following: a training set (n=194), used to train and select CHAP-CHILD model; and a testing set (n=84), used to evaluate the performance of the final CHAP-child model selected. 
+
+
+### Summary
 
 |Training Dataset | Description                                             |
 |-----------------|---------------------------------------------------------|
@@ -95,7 +106,7 @@ nav_order: 3
 
 ## Pre-trained Models
 
-We currently support several [pre-trained models](https://github.com/ADALabUCSD/DeepPostures/tree/master/MSSE-2021/pre-trained-models) that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ALL_ADULTS` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
+We currently support several [pre-trained models](https://github.com/ADALabUCSD/DeepPostures/tree/master/MSSE-2021/pre-trained-models) that can be used to generate predictions. The detailed description of these model architectures can be found in our [paper](https://doi.org/10.1249/MSS.0000000000002705). They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ALL_ADULTS` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
 | Model                                               | Training Dataset    |
 |-----------------------------------------------------|---------------------|
