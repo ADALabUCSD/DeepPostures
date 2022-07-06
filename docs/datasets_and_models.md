@@ -111,10 +111,15 @@ We currently support several [pre-trained models](https://github.com/ADALabUCSD/
 | Model                                               | Training Dataset    |
 |-----------------------------------------------------|---------------------|
 |CHAP_ALL_ADULTS  (default and recommended)           | ACT + AUSDIAB       |
+|CHAP_CHILDREN                                        | PHASE               |
+
+### Additional Models
+Below are some additional pre-trained models described in the previous paper.
+
+| Model                                               | Training Dataset    |
+|-----------------------------------------------------|---------------------|
 |CHAP_A                                               | ACT                 |
 |CHAP_B                                               | ACT                 |
 |CHAP_C                                               | ACT                 |
 |CHAP (ensemble of A, B, and C)                       | ACT                 |
-|CHAP_CHILDREN                                        | PHASE               |
-
 
