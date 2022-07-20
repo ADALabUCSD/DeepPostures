@@ -1,10 +1,10 @@
 ---
 layout: default
-title: 2. Preprocess Data
+title: 2. Data Preprocessing
 parent: Getting Started
 ---
 
-# Preprocess Data
+# Data Preprocessing
 {: .no_toc }
 
 First, you need to create pre-processed data from the source data. To do this invoke the `pre_process_data.py` script as follows:

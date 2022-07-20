@@ -1,11 +1,11 @@
 ---
 layout: default
-title: 0. Download the library
+title: 0. Downloading the library
 parent: Getting Started
 nav_order: 0
 ---
 
-# Get DeepPostures
+# Installing DeepPostures
 
 For the very first step, download the library from [GitHub Link](https://github.com/ADALabUCSD/DeepPostures) via: 
 ```bash
