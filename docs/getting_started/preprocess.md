@@ -94,6 +94,8 @@ Complete usage details of this script are as follows:
 
     **Note:** Our pre-trained models work and make predictions on time-series windows. If your data length is not exactly an integer multiply of the window size, the last a few minutes not enough to make up a whole window will be dropped. This is usually not an issue in most scenarios, but if it matters for your task, you can pad the file with 0s at the end to fill the last window. Note the predictions on this last window would be somewhat unreliable due to the missing data.
 
+    **Note:** The expected .csv file must have the headers (first few lines) in the above format. Any other data format needs to be converted first. The data is usually very compressible, so we recommend compressing with gzip or equivalent before network transmission (don't forget to uncompress).
+
 - **(Optional) Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
     ~~~
