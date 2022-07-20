@@ -4,3 +4,4 @@ Gemfile.lock
 example_out
 predictions
 __pycache__
+/local
