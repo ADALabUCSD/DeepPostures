@@ -92,9 +92,13 @@ Complete usage details of this script are as follows:
 
     **Note:** The pre-processing function expects, by default, an Actigraph RAW file at 30hz with normal filter. If you have Actigraph RAW data at a different Hz level, please specify in the pre_process_data function using the gt3x-frequency parameter.
 
-    **Note:** Our pre-trained models work and make predictions on time-series windows. If your data length is not exactly an integer multiply of the window size, the last a few minutes not enough to make up a whole window will be dropped. This is usually not an issue in most scenarios, but if it matters for your task, you can pad the file with 0s at the end to fill the last window. Note the predictions on this last window would be somewhat unreliable due to the missing data.
-
     **Note:** The expected .csv file must have the headers (first few lines) in the above format. Any other data format needs to be converted first. The data is usually very compressible, so we recommend compressing with gzip or equivalent before network transmission (don't forget to uncompress).
+    
+    **Note:** Our pre-trained models work and make predictions on time-series windows. If your data length is not an exact multiple of the window size, the last a few minutes that is not enough to make up a whole window will be dropped. This simply truncates the participant’s data period by a couple of minutes on average, resulting in slightly reduced wear time by a couple of minutes. This is usually not an issue in most scenarios, but if it matters for your task, you can pad the file with 0s at the end to fill the last window. Note the predictions on this last window would be somewhat unreliable due to the missing data.
+
+    The CHAP development team recommends running CHAP on each participant’s full data collection period prior to removing periods of non-wear, sleep, etc. Using this approach, there are no gaps in a participant’s data from the beginning to end of their data collection period, so CHAP will run predictions on the entire data collection period. The CHAP time-series prediction window will only impact the final few minutes of the data period (at most), as long as non-wear, sleep, etc. are removed after running CHAP rather than before.
+
+    
 
 - **(Optional) Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
