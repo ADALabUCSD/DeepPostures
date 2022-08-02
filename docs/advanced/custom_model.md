@@ -59,3 +59,6 @@ Complete usage details of `make_predictions.pu` script with all overiding config
                             ActivPal label vocabulary (default: {"sitting": 0,
                             "not-sitting": 1, "no-label": -1})
     --silent              Whether to hide info messages
+    --padding {drop,zero,wrap}
+                    Padding scheme for the last part of data that does not
+                    fill a whole lstm window (default: drop)

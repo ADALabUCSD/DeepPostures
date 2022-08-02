@@ -3,5 +3,7 @@ Gemfile.lock
 .bundles_cache
 example_out
 predictions
+preprocessed
 __pycache__
 /local
+.DS_Store

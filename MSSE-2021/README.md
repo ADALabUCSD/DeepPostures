@@ -135,6 +135,9 @@ Complete usage details of this script are as follows:
                             ActivPal label vocabulary (default: {"0": 0, "1": 1,
                             "2": 1})
     --silent              Whether to hide info messages
+    --padding {drop,zero,wrap}
+                        Padding scheme for the last part of data that does not
+                        fill a whole lstm window (default: drop)
 
 
 ## Generating Predictions from Pre-Trained Models

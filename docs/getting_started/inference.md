@@ -35,3 +35,19 @@ Complete usage details of this script are as follows:
     --no-segment          Do not output segment number
     --output-label        Whether to output the actual label
     --silent              Whether to hide info messages
+    --padding {drop,zero,wrap}
+                        Padding scheme for the last part of data that does not
+                        fill a whole lstm window (default: drop)
+
+
+
+#### The three schemes of padding:
+Imagine at the end of our file, we have 8 minutes of data, which can form one 7-min window but the last minute becomes dangling since our window size is 7 minutes. Our code will default to dropping the last 1 minute. We also provide methods to utilize it by imputation/padding potentially. Below is a detailed description of each technique.
+1. drop (default). The default behavior, drop the last a few minutes (1 minute in this case).
+1. zero. We pad extra minutes with zeros (6 minutes in this case), concatenate with the dangling minutes (the last 1 minute of the data in this case), to form a complete window. This window is then used to generate predictions for the last dangling minutes. 
+1. wrap. This method traces back and wraps the past a few minutes to form a 7-min window. In this case, min 2-8 were used to generate predictions for min 8. However, predictions for min 2-7 still come from the window min 1-7.
+All of the above methods are situational, and statistically speaking, there's little guarantee of correctness. Hence the last few minutes should be treated differently with caution.
+<p align="center">
+  <img src="padding.png" width="1080"/>
+</p>
+Suppose the above methods do not suit your purpose. In that case, you can implement other imputation strategies as appropriate for your study directly on the input .csv file to make the data length a multiple of the window size (7 min). If you do it this way, ignore the `--padding` argument.
