@@ -1,6 +1,6 @@
 DeepPostures
 ============
-**New** Check out website at [url](https://adalabucsd.github.io/DeepPostures/)
+**New** Check out website at [url](https://adalabucsd.github.io/DeepPostures/)!
 
 This repository contains the code artifacts released as part of the following publications:
 
