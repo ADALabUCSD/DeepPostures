@@ -32,7 +32,7 @@ import multiprocessing
 import argparse
 import json
 import pathlib
-
+from tqdm import tqdm
 import sys
 sys.path.append(pathlib.Path(__file__).parent.absolute())
 from commons import input_iterator
@@ -83,7 +83,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
         tf.saved_model.loader.load(sess, ["serve"], os.path.join(model_ckpt_path, "{}".format(model)))
 
 
-        for subject_id in subject_ids:
+        for subject_id in tqdm(subject_ids):
             if not args.silent:
                 logger.info('Starting prediction generation for the subject {}'.format(subject_id))
             data = list(input_iterator(pre_processed_data_dir, subject_id))
