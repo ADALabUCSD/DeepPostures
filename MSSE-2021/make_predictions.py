@@ -32,7 +32,7 @@ import multiprocessing
 import argparse
 import json
 import pathlib
-
+# from tqdm import tqdm
 import sys
 sys.path.append(pathlib.Path(__file__).parent.absolute())
 from commons import input_iterator

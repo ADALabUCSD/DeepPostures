@@ -7,3 +7,4 @@ preprocessed
 __pycache__
 /local
 .DS_Store
+.ipynb_checkpoints
