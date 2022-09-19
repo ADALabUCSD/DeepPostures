@@ -490,9 +490,9 @@ if __name__ == "__main__":
     optional_arguments.add_argument(
         '--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     optional_arguments.add_argument(
-        '--mp', help='Number of concurrent workers', type=int, default=None)
+        '--mp', help='Number of concurrent workers. Hint: set to the number of cores (default: %(default)s)', type=int, default=None)
     optional_arguments.add_argument(
-        '--gzipped', help='Whether the data is gzipped or not, hint: extension should be .csv.gz', default=False, action='store_true')
+        '--gzipped', help='Whether the raw data is gzipped or not. Hint: extension should be .csv.gz (default: %(default)s)', default=False, action='store_true')
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
 

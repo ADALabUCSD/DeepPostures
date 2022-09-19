@@ -20,6 +20,10 @@ nav_order: 9
 
     **A:** First you need to isolate the bottleneck and the cause of slowness. If it's from data preprocessing, consider parallel processing and follow [guide]({{ site.baseurl }}{% link advanced/parallel_processing.md %}). If it's the predicting/learning part, then you should try to enable GPU (if you have one) support by installing the GPU-version of tensorflow, or consider using a more powerful machine or a machine with GPU.
 
+- **Q: The data is huge; storing and moving it takes a lot space and time.**
+
+    **A:** We recommend enable data compression following [guide]({{ site.baseurl }}{% link advanced/compression.md %}).
+
 - **Q: My job was running on Kubernetes cluster and got killed with status OOMKilled during CHAP pre_process_data.py stage.**
 
     **A:** One potential reasons could be extremely large ActiGraph 30Hz Raw file, such as > 4GB. Try to remove the large file and re-run.

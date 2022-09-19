@@ -17,7 +17,7 @@ Complete usage details of this script are as follows:
                             [--model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS,CHAP_CHILDREN}]
                             [--predictions-dir PREDICTIONS_DIR]
                             [--no-segment] [--output-label]
-                            [--silent]
+                            [--silent] [--padding {drop,zero,wrap}]
 
     Argument parser for generating model predictions.
 
