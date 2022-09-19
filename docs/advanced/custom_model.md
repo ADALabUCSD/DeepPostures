@@ -16,16 +16,16 @@ If you change the default tuning parameters during training (e.g., bi-lstm-windo
 Complete usage details of `make_predictions.pu` script with all overiding configuration values are as follows:
 
     usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
-                            [--model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS}]
-                            [--predictions-dir default: ./predictions) PREDICTIONS_DIR
-                            [--no-segment] [--output-label]
-                            [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
-                            [--cnn-window-size CNN_WINDOW_SIZE]
-                            [--bi-lstm-window-size BI_LSTM_WINDOW_SIZE]
-                            [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
-                            [--gt3x-frequency GT3X_FREQUENCY]
-                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
-                            [--silent]
+                           [--model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS,CHAP_CHILDREN,CHAP_AUSDIAB}]
+                           [--predictions-dir PREDICTIONS_DIR] [--no-segment]
+                           [--output-label]
+                           [--model-checkpoint-path MODEL_CHECKPOINT_PATH]
+                           [--cnn-window-size CNN_WINDOW_SIZE]
+                           [--bi-lstm-window-size BI_LSTM_WINDOW_SIZE]
+                           [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
+                           [--gt3x-frequency GT3X_FREQUENCY]
+                           [--activpal-label-map ACTIVPAL_LABEL_MAP]
+                           [--silent] [--padding {drop,zero,wrap}]
 
     Argument parser for generating model predictions.
 
