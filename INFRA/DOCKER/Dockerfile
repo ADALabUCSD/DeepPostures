@@ -14,6 +14,7 @@ RUN pip install h5py
 
 WORKDIR /
 
+ARG CACHE_DATE=2022-09-20
 RUN git clone https://github.com/ADALabUCSD/DeepPostures.git
 
 USER root:root
