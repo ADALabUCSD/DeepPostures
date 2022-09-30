@@ -131,3 +131,6 @@ Complete usage details of this script are as follows:
     42633.4305486111,12124,1,2,4,1.111111E-03,338
     42633.4305601852,12134,1,2,5,1.111111E-03,297
     ~~~
+
+### Speed up
+If the data is too large and takes long time for network transmission, we recommend enable data compression following [compression guide]({{ site.baseurl }}{% link advanced/compression.md %}). If the preprocessing is taking too much time, consider parallel processing and follow [parallel guide]({{ site.baseurl }}{% link advanced/parallel_processing.md %}).
