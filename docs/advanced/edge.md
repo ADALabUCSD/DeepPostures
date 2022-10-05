@@ -26,7 +26,7 @@ We randomly sampled 21k 14-min windows from the test split of the AusDIAB datase
 <figure>
 	<img src="../../assets/last_window_accuracy_balanced.png" width="350" style="float:left">
     <img src="../../assets/last_window_pr.png" width="350" style="display: block; margin-right: auto; margin-left: auto;">
-    <figcaption style="text-align:center">Figure 1. Left: Accuracy and Balanced Accuracy, Right: Precision and Recall</figcaption>
+    <figcaption style="text-align:center">Figure 1. Left: Accuracy and Balanced Accuracy. Right: Precision and Recall.</figcaption>
 </figure>
 The model would treat zeros as true data and not as special tokens. As a consequence, padding zeros would trick the model into predicting lots of “sitting” because zeros in the data resemble more sitting than not-sitting. 
 Zero-padding hurts the precision (primarily because of more false positives) but benefits the recall (primarily because of more true positives and fewer false negatives). However, since the data is imbalanced, the net effect is increased accuracy compared to wrap-around padding. The gap is much narrower if we look at the balanced accuracy, however.
@@ -37,7 +37,7 @@ As for the wrap-around method, all metrics remain relatively stable, albeit a sl
 <figure>
 	<img src="../../assets/last_window_all_cm_wrap.png" width="350" style="float:left">
     <img src="../../assets/last_window_all_cm_zero.png" width="350" style="display: block; margin-right: auto; margin-left: auto;">
-    <figcaption style="text-align:center">Figure 2. Confusion Matrix Components. Left: wrap, Right: zero</figcaption>
+    <figcaption style="text-align:center">Figure 2. Confusion Matrix Components. Left: wrap. Right: zero.</figcaption>
 </figure>
 
 For zero-padding, as the amount of padding increases (from right to left), TP (sitting predicted as sitting) and FP (not-sitting predicted as sitting) both increase; FN (sitting predicted as not-sitting) and TN (not-sitting predicted as not-sitting) both decrease. Wrap-around padding is more stable and not showing drastic changes.
@@ -46,7 +46,7 @@ For zero-padding, as the amount of padding increases (from right to left), TP (s
 <figure>
 	<img src="../../assets/last_window_extra_metrics_wrap.png" width="350" style="float:left">
     <img src="../../assets/last_window_extra_metrics_zero.png" width="350" style="display: block; margin-right: auto; margin-left: auto;">
-    <figcaption style="text-align:center">Figure 3. Sensitivity, Specificity, PPV and NPV. Left: wrap, Right: zero</figcaption>
+    <figcaption style="text-align:center">Figure 3. Sensitivity, Specificity, PPV and NPV. Left: wrap. Right: zero.</figcaption>
 </figure>
 Specificity and sensitivity have opposite trends for zero padding. When at most padding (size 1 & 2), sensitivity (TP / (TP + FN)) is high mainly because FN (sitting predicted as not-sitting) drops. Specificity (TN / (TN + FP)) is lower mainly due to higher FP (not-sitting predicted as sitting). 
 
@@ -56,14 +56,14 @@ npv=(TN / (TN + FN)) is higher for zero padding, mainly due to decreased FN. Our
 ### Break-down Metrics Minute-by-Minute
 <figure>
     <img src="../../assets/last_window_acc_per_minute.png" width="700" style="display: block; margin-right: auto; margin-left: auto;">
-    <figcaption style="text-align:center">Figure 4. Per-minute Accuracy and Balanced Accuracy</figcaption>
+    <figcaption style="text-align:center">Figure 4. Per-minute Accuracy and Balanced Accuracy.</figcaption>
 </figure>
 The accuracy gain of zero padding is concentrated in the first few minutes of short windows; when the amount of true data increases, it gets closer to the wrap method. Regarding balanced accuracy, the two methods are also very similar.
 
 
 <figure>
     <img src="../../assets/last_window_pr_per_minute.png" width="700" style="display: block; margin-right: auto; margin-left: auto;">
-    <figcaption style="text-align:center">Figure 5. Per-minute Precision and Recall</figcaption>
+    <figcaption style="text-align:center">Figure 5. Per-minute Precision and Recall.</figcaption>
 </figure>
 
 ### Sampling Variance
@@ -72,7 +72,7 @@ To analyze the effect on the metrics brought by sampling variance, we randomly s
     <img src="../../assets/last_window_accuracy_multisample.png" width="350" style="float:left">
     <img src="../../assets/last_window_accuracy_balanced_multisample.png" width="350" style="float:left">
     <img src="../../assets/last_window_pr_multisample.png" width="350" style="display: block; margin-right: auto; margin-left: auto;">
-    <figcaption style="text-align:center">Figure 6. Upper left: Mean accuracy, Upper right: Mean balanced accuracy, Lower middle: Mean precision and recall.</figcaption>
+    <figcaption style="text-align:center">Figure 6. Upper left: Mean accuracy. Upper right: Mean balanced accuracy. Lower middle: Mean precision and recall.</figcaption>
 </figure>
 There is no noticeable difference in the variance between the two padding schemes.
 
