@@ -66,9 +66,17 @@ The accuracy gain of zero padding is concentrated in the first few minutes of sh
     <figcaption style="text-align:center">Figure 5. Per-minute Precision and Recall</figcaption>
 </figure>
 
-
+### Sampling Variance
+To analyze the effect on the metrics brought by sampling variance, we randomly split the 21k examples into 10 parts; each part contains 2100 examples, which is equivalent to running 10 measurements. We draw the boxplots for them.
+<figure>
+    <img src="../../assets/last_window_accuracy_multisample.png" width="350" style="float:left">
+    <img src="../../assets/last_window_accuracy_balanced_multisample.png" width="350" style="float:left">
+    <img src="../../assets/last_window_pr_multisample.png" width="350" style="display: block; margin-right: auto; margin-left: auto;">
+    <figcaption style="text-align:center">Figure 6. Upper left: Mean accuracy, Upper right: Mean balanced accuracy, Lower middle: Mean precision and recall.</figcaption>
+</figure>
+There is no noticeable difference in the variance between the two padding schemes.
 
 
 ## Conclusions
 
-Either method would work with subtle differences and consequences on the metrics; wrap is stable across window sizes; in a high prevalence (of sitting) setting, zero padding is easier and will work very well in general.
+Either method would work with subtle differences and consequences on the metrics; wrap is stable across window sizes; in a high prevalence (of sitting) setting, zero padding is easier and will work very well in general. However, note that both have very close balanced accuracy; therefore, none of them is clearly better.
