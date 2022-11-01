@@ -432,8 +432,17 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
         subject_ids = gt3x_file_names
 
     if mp is None:
+        common_args = [non_wear_dict,
+                       args,
+                       sleep_logs_dict,
+                       activpal_events_csv_dir_root,
+                       concurrent_wear_dict,
+                       pre_process_data_output_dir,
+                       gt3x_30Hz_csv_dir_root,
+                       gzipped,
+                       ext]
         for subject_id, file_name in zip(subject_ids, gt3x_file_names):
-            fn(subject_id, file_name)
+            fn(subject_id, file_name, *common_args)
     else:
         import multiprocessing
         pool = multiprocessing.Pool(processes=mp)

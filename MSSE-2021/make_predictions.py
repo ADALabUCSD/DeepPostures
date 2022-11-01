@@ -110,6 +110,8 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                         x[n] = x[n][:-border]
                         timestamps[n] = timestamps[n][:-border]
                         labels[n] = labels[n][:-border]
+                        # deficit = wanna_be - border
+                        # print("Dropped: {} sec".format((42 - deficit) * 10))
 
 
                     else:
