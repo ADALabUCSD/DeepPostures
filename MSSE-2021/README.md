@@ -124,8 +124,10 @@ Complete usage details of this script are as follows:
       --mp MP               Number of concurrent workers. Hint: set to the number of cores (default: None)
       --gzipped             Whether the raw data is gzipped or not. Hint: extension should be .csv.gz (default: False)
 
+**Note:** If you use our pre-trained models for generating predictions, please keep the `--window-size` config unmodified, as this is what our models were trained on and cannot be changed. You can modify this if you train your own model (see instructions below, the corresponding config is `--cnn-window-size` ).
 
 ## Generating Predictions from Pre-Trained Models
+
 You can use the released pre-trained models to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
     
     python make_predictions.py --pre-processed-dir <pre_processed_data_dir>
@@ -176,7 +178,7 @@ We currently support several pre-trained models that can be used to generate pre
 |PHASE            | PHASE is a cohort of children. At time of accelerometer wear, the sample had a mean age of x years and was approximately x female.| 
 
 ## Training Your Own Model
-To train your own model invoke the `train_model.py` as follows:
+To train your own model, invoke the `train_model.py` as follows:
 
     python train_model.py --pre-processed-dir <pre-processed-dir> --model-checkpoint-path <checkpoint-dir>
 
