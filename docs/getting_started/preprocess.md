@@ -57,7 +57,7 @@ Complete usage details of this script are as follows:
       --mp MP               Number of concurrent workers. Hint: set to the number of cores (default: None)
       --gzipped             Whether the raw data is gzipped or not. Hint: extension should be .csv.gz (default: False)
 
-**Note:** If you use our pre-trained models for generating predictions, please keep the `--window-size` config unmodified, as this is what our models were trained on and cannot be changed. You can modify this if you train your own model (see instructions below, the corresponding config is `--cnn-window-size` ).
+**Note:** If you use our pre-trained models for generating predictions, please keep the `--window-size` config unmodified, as this is what our models were trained on and cannot be changed. You can modify this if you train your own model (see [instructions]({{ site.baseurl }}{% link advanced/training.md %}), the corresponding config is `--cnn-window-size` ).
 
 ### Data format
 - **Accelerometer Data**: We assume the input data is obtained from ActiGraph GT3X device and converted into single .csv files. The files should be named as **<subject_id>.csv** and files for all subjects should be put in the same directory. First few lines of a sample csv file are as follows:
