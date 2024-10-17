@@ -15,17 +15,10 @@
 
 
 import os
-import h5py
 import pathlib
 import logging
 import numpy as np
 import pandas as pd
-
-import tensorflow
-if int(tensorflow.__version__.split(".")[0]) >= 2:
-    import tensorflow.compat.v1 as tf
-else:
-    import tensorflow as tf
 
 from datetime import datetime
 import argparse
@@ -39,8 +32,6 @@ from model import CNNBiLSTMModel
 
 # torch imports
 import torch
-import torch.nn as nn
-import torch.optim as optim
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,7 +73,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
         bi_lstm_win_size = bi_lstm_window_sizes[model_name] * int(60*downsample_window)
         model = CNNBiLSTMModel(amp_factor=amp_factor, bi_lstm_win_size=bi_lstm_win_size, num_classes=num_classes, load_pretrained = True)
         checkpoint_path = os.path.join(model_ckpt_path, f"{model_name}.pth")
-        model.load_state_dict(torch.load(checkpoint_path))
+        model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
         model.to(device)
 
         if not os.path.exists(os.path.join(output_dir, '{}'.format(model_name))):

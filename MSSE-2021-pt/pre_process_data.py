@@ -47,9 +47,9 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
         time_values.append(
             time.mktime(temp[0][0].timetuple()))
         data_values.append([[x[1], x[2], x[3]] for x in temp])
-        non_wear_values.append(mode([x[4] for x in temp])[0][0])
-        sleeping_values.append(mode([x[5] for x in temp])[0][0])
-        label_values.append(mode([x[6] for x in temp])[0][0])
+        non_wear_values.append(mode([x[4] for x in temp])[0])
+        sleeping_values.append(mode([x[5] for x in temp])[0])
+        label_values.append(mode([x[6] for x in temp])[0])
 
     # flush data, free memory
     h5f_out = h5py.File(subject_data_file_path, "w")
@@ -101,7 +101,7 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, non_wear_dict
         ap_df = ap_df.rename(columns={
                              'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
         event_labels = ap_df['ActivityCode (0=sedentary, 1=standing, 2=stepping)'].apply(
-            lambda x: label_map[str(x)]).tolist()
+            lambda x: label_map[str(int(x))]).tolist()
 
     def check_label(pointer, check_time):
         if ap_df is None:
