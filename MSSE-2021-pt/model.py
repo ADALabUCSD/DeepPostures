@@ -105,9 +105,10 @@ class CNNBiLSTMModel(nn.Module):
     ):
         super(CNNBiLSTMModel, self).__init__()
         self.cnn_model = CNNModel(amp_factor=amp_factor)
+        self.hidden_size = 128
         self.bil_lstm = nn.LSTM(
             input_size=256 * amp_factor,
-            hidden_size=128,
+            hidden_size=self.hidden_size,
             bidirectional=True,
             batch_first=True,
         )  # (batch, seq, feature)
@@ -119,9 +120,9 @@ class CNNBiLSTMModel(nn.Module):
         # The pre-trained model is developed only for two classes and returns the flattened logits
         if self.load_pretrained:
             assert self.num_classes == 2
-            self.fc_bilstm = nn.Linear(128 * amp_factor, 1)
+            self.fc_bilstm = nn.Linear(2 * self.hidden_size, 1)
         else:
-            self.fc_bilstm = nn.Linear(128 * amp_factor, num_classes)
+            self.fc_bilstm = nn.Linear(2 * self.hidden_size, num_classes)
 
     def forward(self, x):
         # CNN forward pass

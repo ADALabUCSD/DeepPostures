@@ -139,6 +139,8 @@ Complete usage details of this script are as follows:
                             [--predictions-dir PREDICTIONS_DIR]
                             [--no-segment] [--output-label]
                             [--silent] [--padding {drop,zero,wrap}]
+                            [--batch-size BATCH_SIZE] [--amp-factor AMP_FACTOR]
+                            [--num-classes NUM_CLASSES]
 
     Argument parser for generating model predictions.
 
@@ -159,6 +161,14 @@ Complete usage details of this script are as follows:
     --padding {drop,zero,wrap}
                         Padding scheme for the last part of data that does not
                         fill a whole lstm window (default: drop)
+    --batch-size BATCH_SIZE
+                            Inference batch size (default: 16)
+    --amp-factor AMP_FACTOR
+                            Factor to increase the number of neurons in the CNN
+                            layers (default: 2)
+    --num-classes NUM_CLASSES
+                            Number of classes in the training dataset (default: 2)
+
 
 We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ALL_ADULTS` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
@@ -275,6 +285,8 @@ Complete usage details of `make_predictions.pu` script with all overiding config
                            [--gt3x-frequency GT3X_FREQUENCY]
                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
                            [--silent] [--padding {drop,zero,wrap}]
+                           [--batch-size BATCH_SIZE] [--amp-factor AMP_FACTOR]
+                           [--num-classes NUM_CLASSES]
 
     Argument parser for generating model predictions.
 
@@ -311,6 +323,13 @@ Complete usage details of `make_predictions.pu` script with all overiding config
       --padding {drop,zero,wrap}
                             Padding scheme for the last part of data that does not
                             fill a whole lstm window (default: drop)
+      --batch-size BATCH_SIZE
+                            Inference batch size (default: 16)
+      --amp-factor AMP_FACTOR
+                            Factor to increase the number of neurons in the CNN
+                            layers (default: 2)
+      --num-classes NUM_CLASSES
+                            Number of classes in the training dataset (default: 2)
 
 
 ## Parallelizing the Code Execution

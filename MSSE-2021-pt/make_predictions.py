@@ -275,7 +275,7 @@ if __name__ == "__main__":
     )
     optional_arguments.add_argument(
             "--batch-size",
-            help="Training batch size (default: 16)",
+            help="Inference batch size (default: 16)",
             default=16,
             type=int,
             required=False,
