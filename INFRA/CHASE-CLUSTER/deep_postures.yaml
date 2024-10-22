@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: deep-postures 
-    image: scnakandala/deep-postures
+    image: ank028/deep-postures-pt
     imagePullPolicy: Always
     command: ["sleep", "infinity"]
     resources:
