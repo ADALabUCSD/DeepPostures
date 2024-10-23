@@ -98,10 +98,11 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, non_wear_dict
             lambda x: timedelta(seconds=round(x * 10) / 10.))
         event_intervals = ap_df['Interval (s)'].tolist()
         # Fix for column name inconsistency in ActivPal
-        ap_df = ap_df.rename(columns={
-                             'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
-        event_labels = ap_df['ActivityCode (0=sedentary, 1=standing, 2=stepping)'].apply(
-            lambda x: label_map[str(int(x))]).tolist()
+        ap_df.columns = ap_df.columns.map(lambda col: 'ActivityCode' if col.startswith('ActivityCode') else col)
+        # ap_df = ap_df.rename(columns={
+        #                      'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
+        event_labels = ap_df['ActivityCode'].apply(
+            lambda x: label_map[str(x)]).tolist()
 
     def check_label(pointer, check_time):
         if ap_df is None:
