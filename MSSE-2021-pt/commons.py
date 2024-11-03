@@ -150,7 +150,7 @@ def get_dataloaders(
         )
     if test_subjects:
         test_data = IterDataset(
-            window_generator(pre_processed_dir, bi_lstm_win_size, valid_subjects)
+            window_generator(pre_processed_dir, bi_lstm_win_size, test_subjects)
         )
         test_dataloader = DataLoader(test_data, batch_size=batch_size, pin_memory=True)
 

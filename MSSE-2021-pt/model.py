@@ -101,7 +101,7 @@ class CNNModel(nn.Module):
 
 class CNNBiLSTMModel(nn.Module):
     def __init__(
-        self, amp_factor, bi_lstm_win_size, num_classes, load_pretrained=False
+        self, amp_factor, bi_lstm_win_size, num_classes
     ):
         super(CNNBiLSTMModel, self).__init__()
         self.cnn_model = CNNModel(amp_factor=amp_factor)
@@ -115,14 +115,10 @@ class CNNBiLSTMModel(nn.Module):
         self.bi_lstm_win_size = bi_lstm_win_size
         self.num_classes = num_classes
         self.amp_factor = amp_factor
-        self.load_pretrained = load_pretrained
 
         # The pre-trained model is developed only for two classes and returns the flattened logits
-        if self.load_pretrained:
-            assert self.num_classes == 2
-            self.fc_bilstm = nn.Linear(2 * self.hidden_size, 1)
-        else:
-            self.fc_bilstm = nn.Linear(2 * self.hidden_size, num_classes)
+        assert self.num_classes == 2
+        self.fc_bilstm = nn.Linear(2 * self.hidden_size, 1)
 
     def forward(self, x):
         # CNN forward pass
@@ -139,8 +135,5 @@ class CNNBiLSTMModel(nn.Module):
         fc_output = self.fc_bilstm(lstm_output)
 
         # Reshape to get logits
-        if self.load_pretrained:
-            logits = fc_output.view(-1, self.bi_lstm_win_size)
-        else:
-            logits = fc_output.view(-1, self.bi_lstm_win_size, self.num_classes)
+        logits = fc_output.view(-1, self.bi_lstm_win_size)
         return logits

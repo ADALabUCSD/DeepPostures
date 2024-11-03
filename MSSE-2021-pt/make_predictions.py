@@ -28,6 +28,7 @@ import sys
 sys.path.append(pathlib.Path(__file__).parent.absolute())
 
 from commons import get_subject_dataloader, input_iterator
+from utils import load_model_weights
 from model import CNNBiLSTMModel
 
 # torch imports
@@ -71,9 +72,9 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
     for model_name in models:
         # Load saved model
         bi_lstm_win_size = bi_lstm_window_sizes[model_name] * int(60*downsample_window)
-        model = CNNBiLSTMModel(amp_factor=amp_factor, bi_lstm_win_size=bi_lstm_win_size, num_classes=num_classes, load_pretrained = True)
+        model = CNNBiLSTMModel(amp_factor=amp_factor, bi_lstm_win_size=bi_lstm_win_size, num_classes=num_classes)
         checkpoint_path = os.path.join(model_ckpt_path, f"{model_name}.pth")
-        model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
+        load_model_weights(model, checkpoint_path, weights_only=True)
         model.to(device)
 
         if not os.path.exists(os.path.join(output_dir, '{}'.format(model_name))):
@@ -154,7 +155,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                             outputs = model(inputs)
                             pred = torch.sigmoid(outputs)
                             pred = torch.round(pred)
-                            np_preds = pred.detach().numpy().flatten().tolist()
+                            np_preds = pred.cpu().detach().numpy().flatten().tolist()
                             preds+=np_preds
                             
                 y_pred = np.array(preds)
