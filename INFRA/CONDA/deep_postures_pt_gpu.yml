@@ -69,6 +69,7 @@ dependencies:
       - fsspec==2024.9.0
       - h5py==3.12.1
       - jinja2==3.1.4
+      - joblib==1.4.2
       - markupsafe==3.0.1
       - mpmath==1.3.0
       - networkx==3.4.1
@@ -88,10 +89,13 @@ dependencies:
       - pandas==2.2.3
       - pillow==11.0.0
       - pytz==2024.2
+      - scikit-learn==1.5.2
       - scipy==1.14.1
       - sympy==1.13.3
+      - threadpoolctl==3.5.0
       - torch==2.4.1
       - torchaudio==2.4.1
       - torchvision==0.19.1
+      - tqdm==4.66.6
       - triton==3.0.0
       - tzdata==2024.2

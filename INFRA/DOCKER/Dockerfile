@@ -11,6 +11,8 @@ RUN pip install numpy
 RUN pip install pandas
 RUN pip install scipy
 RUN pip install h5py
+RUN pip install scikit-learn==1.5.2
+RUN pip install tqdm==4.66.6
 
 WORKDIR /
 
