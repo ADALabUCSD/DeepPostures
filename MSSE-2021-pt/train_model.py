@@ -72,16 +72,15 @@ def create_splits(
             .astype(str)
             .to_list()
         )
-
         valid_subjects = []
         random.shuffle(train_subjects)
         if validation_data_fraction:
             train_subjects, valid_subjects = train_test_split(
-                train_subjects, test_size=validation_data_fraction
+                train_subjects, test_size=validation_data_fraction/100.0, shuffle=False
             )
         if training_data_fraction:
             train_subjects, _ = train_test_split(
-                train_subjects, train_size=training_data_fraction
+                train_subjects, train_size=training_data_fraction/100.0, shuffle=False
             )
         missing_train_subjects = set(train_subjects) - set(subject_ids)
         missing_valid_subjects = set(valid_subjects) - set(subject_ids)
@@ -278,6 +277,8 @@ if __name__ == "__main__":
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
 
+    print("Using device", "cuda" if torch.cuda.is_available() else "cpu")
+
     # Precheck on directories
     if os.path.exists(args.model_checkpoint_path):
         raise Exception(
@@ -470,7 +471,7 @@ if __name__ == "__main__":
 
             if not args.silent:
                 print(
-                    f"Epoch [{epoch+1}/{args.num_epochs}], Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Val Loss: {val_loss:.4f}, Val Accuracy: {epoch_val_acc:.2%}"
+                    f"Epoch [{epoch+1}/{args.num_epochs}], Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Val Loss: {epoch_val_loss:.4f}, Val Accuracy: {epoch_val_acc:.2%}"
                 )
         else:
             if not args.silent:
