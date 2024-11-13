@@ -16,6 +16,8 @@ DeepPostures is a library containing deep learning methods for identifying human
 
 ---
 
+📌 DeepPostures project is migrated to PyTorch. See the updated usage steps at [Getting Started]({{ site.baseurl }}{% link getting_started/getting_started.md %}).
+
 ## About 
 <img src="Illustration.jpeg" width="700">
 

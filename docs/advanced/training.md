@@ -29,6 +29,8 @@ Complete usage details of this script are as follows:
                         [--class-weights CLASS_WEIGHTS]
                         [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
                         [--silent]
+                        [--output-file OUTPUT_FILE]
+                        [--run-test]
 
     Argument parser for training CNN model.
 
@@ -79,6 +81,9 @@ Complete usage details of this script are as follows:
     --down-sample-frequency DOWN_SAMPLE_FREQUENCY
                             Downsample frequency in Hz for GT3X data (default: 10)
     --silent              Whether to hide info messages
+    --output-file OUTPUT_FILE
+                            Output file to log training metric
+    --run-test            Run test pipeline after training
 
 **Model Selection:** Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and BiLSTM window size etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
 

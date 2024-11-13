@@ -8,7 +8,7 @@ This repository contains the code artifacts released as part of the following pu
 
 **We strongly suggest the user start with our website and use the MSSE-2021 folder as it contains the latest iteration of our research.**
 
-> The current codebase has been migrated to PyTorch. To access the previous Tensorflow implementation switch to `tensorflow` branch. The tensorflow branch contains implementation for both `/JMPB-2021` and `/MSSE-2021` 
+> The current codebase has been migrated to PyTorch. To access the previous TensorFlow implementation switch to `tensorflow` branch. The tensorflow branch contains implementation for both `/JMPB-2021` and `/MSSE-2021` 
 
 Pre-Requisites
 --------------
@@ -20,6 +20,8 @@ We recommend first [installing Anaconda](https://docs.anaconda.com/anaconda/inst
 
 Alternatively, you can use conda to install Python 3 and use `pip` to install the following rerquired packages.
     
+    conda create -n deep_postures_pytorch python=3.11
+    conda activate deep_postures_pytorch
     pip install torch==2.4.1
     pip install numpy
     pip install pandas

@@ -278,7 +278,7 @@ After training your own model you can use it to generate predictions by passing 
 
 If you change the default tuning parameters during training (e.g., bi-lstm-window-size), you also need to set the same values for `make_predictions.py` by using the respective directives (e.g., `--bi-lstm-window-size`).
 
-Complete usage details of `make_predictions.pu` script with all overiding configuration values are as follows:
+Complete usage details of `make_predictions.py` script with all overiding configuration values are as follows:
 
     usage: make_predictions.py [-h] --pre-processed-dir PRE_PROCESSED_DIR
                            [--model {CHAP_A,CHAP_B,CHAP_C,CHAP,CHAP_ALL_ADULTS,CHAP_CHILDREN,CHAP_AUSDIAB}]

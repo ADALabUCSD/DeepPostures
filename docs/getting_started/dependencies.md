@@ -12,17 +12,22 @@ We recommend first [installing Anaconda](https://www.anaconda.com/) and then run
 Now [open a terminal](https://docs.anaconda.com/anaconda/user-guide/getting-started/#write-a-python-program-using-anaconda-prompt-or-terminal) and run commands:
 
 ```bash
-    conda env create -f INFRA/CONDA/deep_postures_gpu_env.yml # for cpu use INFRA/CONDA/deep_postures_cpu_env.yml
+    conda env create -f INFRA/CONDA/deep_postures_pt_gpu.yml # for cpu use INFRA/CONDA/deep_postures_pt_cpu.yml
     conda activate deep_postures
 ```
 
 If the above doesn't work, you can do it manually.
 
 ```bash
-    conda create -n deep_postures python=3.6
-    conda activate deep_postures
-    conda install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
-    conda install pandas numpy scipy h5py
+    conda create -n deep_postures_pytorch python=3.11
+    conda activate deep_postures_pytorch
+    pip install torch==2.4.1
+    pip install numpy
+    pip install pandas
+    pip install scipy
+    pip install h5py
+    pip install scikit-learn==1.5.2
+    pip install tqdm==4.66.6
 ```
 
 **Now, move into the MSSE-2021 folder where our newest model is hosted:**

@@ -18,6 +18,7 @@ Complete usage details of this script are as follows:
                             [--predictions-dir PREDICTIONS_DIR]
                             [--no-segment] [--output-label]
                             [--silent] [--padding {drop,zero,wrap}]
+                            [--amp-factor AMP_FACTOR]
 
     Argument parser for generating model predictions.
 
@@ -38,7 +39,8 @@ Complete usage details of this script are as follows:
     --padding {drop,zero,wrap}
                         Padding scheme for the last part of data that does not
                         fill a whole lstm window (default: drop)
-
+    --amp-factor AMP_FACTOR
+                        Factor to increase the number of neurons in the CNN layers (default: 2)
 
 
 #### The three schemes of padding/imputation:

@@ -8,13 +8,13 @@ nav_order: 9
 {: .no_toc }
 
 
-- **Q: My TensorFlow does not expect the model format.**
+<!-- - **Q: My TensorFlow does not expect the model format.**
 
-    **A:** To use the library you will need specific versions of TensorFlow, please refer to [Getting Started]({{ site.baseurl }}{% link getting_started/dependencies.md %})
+    **A:** To use the library you will need specific versions of TensorFlow, please refer to [Getting Started]({{ site.baseurl }}{% link getting_started/dependencies.md %}) -->
 
 - **Q: What Python version should I have?**
 
-    **A:** The bare minimum you should have is Python 3. We tested and recommend using Python 3.6 as higher Python versions may cause problems with certain dependencies.
+    **A:** The bare minimum you should have is Python 3. We tested and recommend using Python 3.11 as other Python versions may cause problems with certain dependencies.
 
 - **Q: The script runs very slow on my machine. What should I do?**
 
