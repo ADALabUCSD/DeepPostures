@@ -79,6 +79,10 @@ def create_splits(
             train_subjects, valid_subjects = train_test_split(
                 train_subjects, test_size=validation_data_fraction
             )
+        if training_data_fraction:
+            train_subjects, _ = train_test_split(
+                train_subjects, train_size=training_data_fraction
+            )
         missing_train_subjects = set(train_subjects) - set(subject_ids)
         missing_valid_subjects = set(valid_subjects) - set(subject_ids)
         train_subjects = list(set(train_subjects) - set(missing_train_subjects))
@@ -307,7 +311,11 @@ if __name__ == "__main__":
                 )
             )
 
-    subject_ids = [fname.split(".")[0] for fname in os.listdir(args.pre_processed_dir)]
+    subject_ids = [fname.split(".")[0][:-2] for fname in os.listdir(os.path.join(args.pre_processed_dir,"BL"))]
+    subject_ids += [fname.split(".")[0][:-2] for fname in os.listdir(os.path.join(args.pre_processed_dir,"FV"))]
+    subject_ids = list(set(subject_ids))
+    
+    print("Subject IDs: ", subject_ids)
     train_subjects, valid_subjects, test_subjects = create_splits(
         subject_ids,
         args.split_data_file,
@@ -316,6 +324,13 @@ if __name__ == "__main__":
         args.testing_data_fraction,
         args.run_test
     )
+
+    train_subjects = [x+"BL" for x in train_subjects] + [x+"FV" for x in train_subjects]
+    valid_subjects = [x+"BL" for x in valid_subjects] + [x+"FV" for x in valid_subjects]
+    test_subjects = [x+"BL" for x in test_subjects] + [x+"FV" for x in test_subjects]
+    random.shuffle(train_subjects)
+    random.shuffle(valid_subjects)
+    random.shuffle(test_subjects)
 
     output_shapes = (
         (

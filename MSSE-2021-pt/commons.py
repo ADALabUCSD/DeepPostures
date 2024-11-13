@@ -19,6 +19,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from datetime import datetime, timedelta
+from tqdm import tqdm
 
 
 class IterDataset(torch.utils.data.IterableDataset):
@@ -89,18 +90,23 @@ def window_generator(data_root, win_size_10s, subject_ids):
     Generate windowed to be processed by CNN
     """
 
-    for subject_id in subject_ids:
-        for x_seq, _, y_seq in input_iterator(data_root, subject_id, train=True):
-            x_window = []
-            y_window = []
-            for x, y in zip(x_seq, y_seq):
-                x_window.append(x)
-                y_window.append(y)
+    for subject_id in tqdm(subject_ids):
+        new_data_root = os.path.join(data_root, "BL" if "BL" in subject_id else "FV")
+        subject_dir = os.path.join(new_data_root, subject_id)
+        if os.path.isdir(subject_dir):
+            for x_seq, _, y_seq in input_iterator(new_data_root, subject_id, train=True):
+                x_window = []
+                y_window = []
+                for x, y in zip(x_seq, y_seq):
+                    x_window.append(x)
+                    y_window.append(y)
 
-                if len(y_window) == win_size_10s:
-                    yield np.stack(x_window, axis=0), np.stack(y_window, axis=0)
-                    x_window = []
-                    y_window = []
+                    if len(y_window) == win_size_10s:
+                        yield np.stack(x_window, axis=0), np.stack(y_window, axis=0)
+                        x_window = []
+                        y_window = []
+        else:
+            print("Subject data at {} not found".format(subject_dir))
 
 def get_subject_dataloader(test_subjects_data, batch_size):
     """
