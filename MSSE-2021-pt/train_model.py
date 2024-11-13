@@ -32,6 +32,7 @@ from utils import write_metrics_to_csv, load_model_weights
 from model import CNNBiLSTMModel
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from datetime import datetime
 
 
 # torch imports
@@ -58,19 +59,16 @@ def create_splits(
     training_data_fraction,
     validation_data_fraction,
     testing_data_fraction,
+    run_test
 ):
     """
     Creates train/validation/tets split from split data file or based on data fractions
     """
     if split_data_file:
+        # Read data from split data file
         df = pd.read_csv(split_data_file)
         train_subjects = (
             df[df["type"].str.contains("train", na=False)]["study_id"]
-            .astype(str)
-            .to_list()
-        )
-        test_subjects = (
-            df[df["type"].str.contains("test", na=False)]["study_id"]
             .astype(str)
             .to_list()
         )
@@ -78,11 +76,27 @@ def create_splits(
         random.shuffle(train_subjects)
         if validation_data_fraction:
             train_subjects, valid_subjects = train_test_split(
-                train_subjects, test_size=validation_data_fraction
+                train_subjects, test_size=validation_data_fraction/100.0, shuffle=False
+            )
+        if training_data_fraction:
+            train_subjects, _ = train_test_split(
+                train_subjects, train_size=training_data_fraction/100.0, shuffle=False
             )
         missing_train_subjects = set(train_subjects) - set(subject_ids)
         missing_valid_subjects = set(valid_subjects) - set(subject_ids)
-        missing_test_subjects = set(test_subjects) - set(subject_ids)
+        train_subjects = list(set(train_subjects) - set(missing_train_subjects))
+        valid_subjects = list(set(valid_subjects) - set(missing_valid_subjects))
+
+        test_subjects = []
+        missing_test_subjects = []
+        if run_test:
+            test_subjects = (
+                df[df["type"].str.contains("test", na=False)]["study_id"]
+                .astype(str)
+                .to_list()
+            )
+            missing_test_subjects = set(test_subjects) - set(subject_ids)
+            test_subjects = list(set(test_subjects) - set(missing_test_subjects))
 
         if missing_train_subjects or missing_valid_subjects or missing_test_subjects:
             print(
@@ -91,9 +105,6 @@ def create_splits(
                   Valid subjects: {missing_valid_subjects}
                   Test Subjects: {missing_test_subjects}"""
             )
-        train_subjects = list(set(train_subjects) - set(missing_train_subjects))
-        valid_subjects = list(set(valid_subjects) - set(missing_valid_subjects))
-        test_subjects = list(set(test_subjects) - set(missing_test_subjects))
 
         return train_subjects, valid_subjects, test_subjects
     else:
@@ -246,15 +257,21 @@ if __name__ == "__main__":
         action="store_true",
     )
     optional_arguments.add_argument(
-        "--output-dir",
-        help="Output directory",
-        default="./output",
+        "--output-file",
+        help="Output file to log training metric",
+        default="./output_metrics.csv",
         required=False,
     )
     optional_arguments.add_argument(
         "--split-data-file",
         help="CSV file containing train//test split subject id in separate columns",
         required=False,
+    )
+    optional_arguments.add_argument(
+        "--run-test",
+        default=False,
+        required=False,
+        action="store_true",
     )
 
     parser._action_groups.append(optional_arguments)
@@ -265,8 +282,6 @@ if __name__ == "__main__":
         raise Exception(
             "Model checkpoint: {} already exists.".format(args.model_checkpoint_path)
         )
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
 
     if args.transfer_learning_model:
         if args.transfer_learning_model == "CUSTOM_MODEL":
@@ -302,6 +317,7 @@ if __name__ == "__main__":
         args.training_data_fraction,
         args.validation_data_fraction,
         args.testing_data_fraction,
+        args.run_test
     )
 
     output_shapes = (
@@ -442,7 +458,7 @@ if __name__ == "__main__":
 
             if not args.silent:
                 print(
-                    f"Epoch [{epoch+1}/{args.num_epochs}], Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Val Loss: {val_loss:.4f}, Val Accuracy: {epoch_val_acc:.2%}"
+                    f"Epoch [{epoch+1}/{args.num_epochs}], Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Val Loss: {epoch_val_loss:.4f}, Val Accuracy: {epoch_val_acc:.2%}"
                 )
         else:
             if not args.silent:
@@ -461,7 +477,7 @@ if __name__ == "__main__":
         )
 
     # Log metric values
-    write_metrics_to_csv(metrics, f"./{args.output_dir}/train_val_metrics.csv")
+    write_metrics_to_csv(metrics, args.output_file)
     # Save model
     if not args.silent:
         print("Training finished.")
@@ -497,7 +513,6 @@ if __name__ == "__main__":
 
         test_accuracy = 0.0
         n_batches = 0
-        print("test_dataloader", test_dataloader)
         with torch.no_grad():
             for inputs, labels in test_dataloader:
                 inputs, labels = inputs.to(device, dtype=torch.float32), labels.to(
