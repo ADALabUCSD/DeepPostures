@@ -1,4 +1,4 @@
-# Copyright 2021 Supun Nakandala. All Rights Reserved.
+# Copyright 2024 Animesh Kumar. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,39 +15,60 @@
 import os
 import h5py
 import numpy as np
-
-import tensorflow
-if int(tensorflow.__version__.split(".")[0]) == 2:
-    import tensorflow.compat.v1 as tf
-else:
-    import tensorflow as tf
+import torch
+from torch.utils.data import DataLoader
 
 from datetime import datetime, timedelta
 
+
+class IterDataset(torch.utils.data.IterableDataset):
+    """
+    PyTorch IterableDataset created from a generator
+    """
+
+    def __init__(self, generator):
+        self.generator = generator
+
+    def __iter__(self):
+        return self.generator
+
+
 def input_iterator(data_root, subject_id, train=False):
-    fnames = [name.split('.')[0] for name in os.listdir(os.path.join(data_root, subject_id)) if not name.startswith('.')]
+    """
+    Iterate and read the preprocessed data files
+    """
+
+    fnames = [
+        name.split(".")[0]
+        for name in os.listdir(os.path.join(data_root, subject_id))
+        if not name.startswith(".")
+    ]
     fnames.sort()
     for i in range(len(fnames) - 1):
-        assert datetime.strptime(fnames[i+1], "%Y-%m-%d").date() - datetime.strptime(fnames[i], "%Y-%m-%d").date() == timedelta(days=1)
+        assert datetime.strptime(fnames[i + 1], "%Y-%m-%d").date() - datetime.strptime(
+            fnames[i], "%Y-%m-%d"
+        ).date() == timedelta(days=1)
 
     data_batch = []
     timestamps_batch = []
     label_batch = []
     for fname in fnames:
-        h5f = h5py.File(os.path.join(data_root, subject_id,  '{}.h5'.format(fname)), 'r')
-        timestamps = h5f.get('time')[:]
-        data = h5f.get('data')[:]
-        sleeping = h5f.get('sleeping')[:]
-        non_wear = h5f.get('non_wear')[:]
-        label = h5f.get('label')[:]
-        
+        h5f = h5py.File(os.path.join(data_root, subject_id, "{}.h5".format(fname)), "r")
+        timestamps = h5f.get("time")[:]
+        data = h5f.get("data")[:]
+        sleeping = h5f.get("sleeping")[:]
+        non_wear = h5f.get("non_wear")[:]
+        label = h5f.get("label")[:]
+
         for d, t, s, nw, l in zip(data, timestamps, sleeping, non_wear, label):
             # if train and l == -1:
             #     raise Exception('Missing ground truth label information in pre-processed data')
-            
+
             if s == 1 or nw == 1 or (train and l == -1):
                 if len(timestamps_batch) > 0:
-                    yield np.array(data_batch), np.array(timestamps_batch), np.array(label_batch)
+                    yield np.array(data_batch), np.array(timestamps_batch), np.array(
+                        label_batch
+                    )
                 data_batch = []
                 timestamps_batch = []
                 label_batch = []
@@ -56,63 +77,81 @@ def input_iterator(data_root, subject_id, train=False):
             data_batch.append(d)
             timestamps_batch.append(t)
             label_batch.append(l)
-    
+
         h5f.close()
 
     if len(timestamps_batch) > 0:
         yield np.array(data_batch), np.array(timestamps_batch), np.array(label_batch)
 
 
-def cnn_bi_lstm_model(x, amp_factor, bil_lstm_win_size, num_classes):
-    logits = cnn_model(x, amp_factor=amp_factor)
-    logits = tf.reshape(logits, [-1, bil_lstm_win_size, 256*amp_factor])
+def window_generator(data_root, win_size_10s, subject_ids):
+    """
+    Generate windowed to be processed by CNN
+    """
 
-    forward_cell = tf.nn.rnn_cell.LSTMCell(128)
-    backward_cell = tf.nn.rnn_cell.LSTMCell(128)
-    encoder_outputs,_ = tf.nn.bidirectional_dynamic_rnn(
-            forward_cell,
-            backward_cell,
-            logits,
-            dtype=tf.float32
+    for subject_id in subject_ids:
+        for x_seq, _, y_seq in input_iterator(data_root, subject_id, train=True):
+            x_window = []
+            y_window = []
+            for x, y in zip(x_seq, y_seq):
+                x_window.append(x)
+                y_window.append(y)
+
+                if len(y_window) == win_size_10s:
+                    yield np.stack(x_window, axis=0), np.stack(y_window, axis=0)
+                    x_window = []
+                    y_window = []
+
+def get_subject_dataloader(test_subjects_data, batch_size):
+    """
+    Get dataloader for a single subject from preprocessed data
+    """
+
+    def list_generator(lst):
+        for item in lst:
+            yield item
+
+    subject_data = IterDataset(list_generator(test_subjects_data))
+    subject_dataloader = DataLoader(
+        subject_data, batch_size=batch_size, pin_memory=True
+    )
+    return subject_dataloader
+
+def get_dataloaders(
+    pre_processed_dir,
+    bi_lstm_win_size,
+    batch_size,
+    train_subjects,
+    valid_subjects,
+    test_subjects,
+):
+    """
+    Process data and get dataloaders for subject
+    """
+
+    train_dataloader = None
+    valid_dataloader = None
+    test_dataloader = None
+
+    if train_subjects:
+        train_data = IterDataset(
+            window_generator(pre_processed_dir, bi_lstm_win_size, train_subjects)
         )
-    encoder_outputs = tf.concat(encoder_outputs, axis=2)
-    logits = tf.reshape(tf.layers.dense(encoder_outputs, units=num_classes), [-1, bil_lstm_win_size, num_classes])
-    return logits
-    
+        train_dataloader = DataLoader(
+            train_data, batch_size=batch_size, pin_memory=True
+        )
 
-def cnn_model(x, amp_factor=1):
-    with tf.variable_scope('model'):
-        conv1 = tf.layers.conv2d(x, filters=32*amp_factor, kernel_size=[5, 3],
-                                 data_format='channels_last', padding= "same",
-                                 strides=(2, 1),
-                                 activation=tf.nn.relu)
-        pool1 = conv1
+    if valid_subjects:
+        valid_data = IterDataset(
+            window_generator(pre_processed_dir, bi_lstm_win_size, valid_subjects)
+        )
+        valid_dataloader = DataLoader(
+            valid_data, batch_size=batch_size, pin_memory=True
+        )
+    if test_subjects:
+        test_data = IterDataset(
+            window_generator(pre_processed_dir, bi_lstm_win_size, test_subjects)
+        )
+        test_dataloader = DataLoader(test_data, batch_size=batch_size, pin_memory=True)
 
-        conv2 = tf.layers.conv2d(pool1, filters=64*amp_factor, kernel_size=[5, 1],
-                                 data_format='channels_last', padding= "same",
-                                 strides=(2, 1),
-                                 activation=tf.nn.relu)
-        pool2 = conv2
-
-        conv3 = tf.layers.conv2d(pool2, filters=128*amp_factor, kernel_size=[5, 1],
-                                 data_format='channels_last', padding= "same",
-                                 strides=(2, 1),
-                                 activation=tf.nn.relu)
-        pool3 = conv3
-
-        conv4 = tf.layers.conv2d(pool3, filters=256*amp_factor, kernel_size=[5, 1],
-                                 data_format='channels_last', padding= "same",
-                                strides=(2, 1), 
-                                activation=tf.nn.relu)
-        pool4 = conv4
-
-        conv5 = tf.layers.conv2d(pool4, filters=256*amp_factor, kernel_size=[5, 1],
-                                 data_format='channels_last', padding= "same",
-                                strides=(2, 1), 
-                                activation=tf.nn.relu)
-        pool5 = conv5        
-        pool5 = tf.transpose(pool5, [0, 3, 1, 2])
-        size = pool5.shape[-1] * pool5.shape[-2] * pool5.shape[-3]
-
-        logits = tf.layers.dense(tf.reshape(pool5,(-1, size)), units=256*amp_factor)
-        return logits
+    return train_dataloader, valid_dataloader, test_dataloader

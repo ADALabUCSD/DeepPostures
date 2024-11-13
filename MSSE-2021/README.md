@@ -6,6 +6,7 @@
   - [Training Your Own Model](#training-your-own-model)
   - [Generating Predictions using a Custom-Trained Model](#generating-predictions-using-a-custom-trained-model)
   - [Parallelizing the Code Execution](#parallelizing-the-code-execution)
+  - [Converting existing Tensorflow Weights to PyTorch](#parallelizing-the-code-execution)
   
 ## Data
 - **Accelerometer Data**: We assume the input data is obtained from ActiGraph GT3X device and converted into single .csv files. The files should be named as **<subject_id>.csv** and files for all subjects should be put in the same directory. First few lines of a sample csv file are as follows:
@@ -139,6 +140,8 @@ Complete usage details of this script are as follows:
                             [--predictions-dir PREDICTIONS_DIR]
                             [--no-segment] [--output-label]
                             [--silent] [--padding {drop,zero,wrap}]
+                            [--batch-size BATCH_SIZE] [--amp-factor AMP_FACTOR]
+                            [--num-classes NUM_CLASSES]
 
     Argument parser for generating model predictions.
 
@@ -159,6 +162,14 @@ Complete usage details of this script are as follows:
     --padding {drop,zero,wrap}
                         Padding scheme for the last part of data that does not
                         fill a whole lstm window (default: drop)
+    --batch-size BATCH_SIZE
+                            Inference batch size (default: 16)
+    --amp-factor AMP_FACTOR
+                            Factor to increase the number of neurons in the CNN
+                            layers (default: 2)
+    --num-classes NUM_CLASSES
+                            Number of classes in the training dataset (default: 2)
+
 
 We currently support several pre-trained models that can be used to generate predictions. They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ALL_ADULTS` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
@@ -200,6 +211,8 @@ Complete usage details of this script are as follows:
                       [--class-weights CLASS_WEIGHTS]
                       [--down-sample-frequency DOWN_SAMPLE_FREQUENCY]
                       [--silent]
+                      [--output-file OUTPUT_FILE]
+                      [--run-test]
 
     Argument parser for training CNN model.
 
@@ -250,6 +263,9 @@ Complete usage details of this script are as follows:
       --down-sample-frequency DOWN_SAMPLE_FREQUENCY
                             Downsample frequency in Hz for GT3X data (default: 10)
       --silent              Whether to hide info messages
+      --output-file OUTPUT_FILE
+                            Output file to log training metric
+      --run-test            Run test pipeline after training
 
 **Model Selection:** Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and BiLSTM window size etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
 
@@ -275,6 +291,8 @@ Complete usage details of `make_predictions.pu` script with all overiding config
                            [--gt3x-frequency GT3X_FREQUENCY]
                            [--activpal-label-map ACTIVPAL_LABEL_MAP]
                            [--silent] [--padding {drop,zero,wrap}]
+                           [--batch-size BATCH_SIZE] [--amp-factor AMP_FACTOR]
+                           [--num-classes NUM_CLASSES]
 
     Argument parser for generating model predictions.
 
@@ -311,6 +329,13 @@ Complete usage details of `make_predictions.pu` script with all overiding config
       --padding {drop,zero,wrap}
                             Padding scheme for the last part of data that does not
                             fill a whole lstm window (default: drop)
+      --batch-size BATCH_SIZE
+                            Inference batch size (default: 16)
+      --amp-factor AMP_FACTOR
+                            Factor to increase the number of neurons in the CNN
+                            layers (default: 2)
+      --num-classes NUM_CLASSES
+                            Number of classes in the training dataset (default: 2)
 
 
 ## Parallelizing the Code Execution
@@ -324,4 +349,7 @@ python pre_process_data.py --gt3x-dir ./gt3x_dir --pre-processed-dir ./pre-proce
 The GT3X RAW files are large in size, and transmitting them through disk or network could take a lot of time and substantial storage space. To mitigate these issues, we recommend compressing these files using gzip as the files are highly compressible (we reduced 800GB of dataset to 40GB). Then use the `--gzipped` toggle of `pre_process_data.py` to consume the gzipped documents directly. Note: only the RAW files can be passed as gzipped, each RAW file must be compressed individually, and the extension must be `.csv.gz`.
 
 
-
+## Converting existing TensorFlow Weights to PyTorch
+All the weights released as part of the TensorFlow implementation have been converted to a format which can be easily used by PyTorch.
+If you have finetuned the tensorflow weights previouly and need to port them to PyTorch use the notebook `/tf2PtConversion/tf2PtWeightsConversion.ipynb` to convert them.
+> Note this notebook is experimental and may require some additionally debugging on the end of the user.

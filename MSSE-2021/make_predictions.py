@@ -1,4 +1,4 @@
-# Copyright 2021 Supun Nakandala. All Rights Reserved.
+# Copyright 2024 Animesh Kumar. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,34 +15,30 @@
 
 
 import os
-import h5py
 import pathlib
 import logging
 import numpy as np
 import pandas as pd
 
-import tensorflow
-if int(tensorflow.__version__.split(".")[0]) >= 2:
-    import tensorflow.compat.v1 as tf
-else:
-    import tensorflow as tf
-
 from datetime import datetime
-import multiprocessing
 import argparse
 import json
 import pathlib
-# from tqdm import tqdm
 import sys
 sys.path.append(pathlib.Path(__file__).parent.absolute())
-from commons import input_iterator
+
+from commons import get_subject_dataloader, input_iterator
+from utils import load_model_weights
+from model import CNNBiLSTMModel
+
+# torch imports
+import torch
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def generate_predictions(pre_processed_data_dir, output_dir, model, segment, output_label, label_map, downsample_window, bi_lstm_window_sizes, cnn_window_size,
-    gt3x_frequency, model_ckpt_path, padding="drop"):
+    gt3x_frequency, amp_factor, num_classes, model_ckpt_path, silent, batch_size, padding="drop"):
     """
     Function to generate the activity predictions for pre-precessed data. Predictions will be written out to the given
     output_dir. Predicted value will be one of 0: sedentary or 1: non-sedentary.
@@ -65,31 +61,35 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
 
     subject_ids = [fname.split('.')[0] for fname in os.listdir(pre_processed_data_dir) if not fname.startswith('.')]
 
-
     perform_ensemble = False
     if model == 'CHAP':
         models = ['CHAP_A', 'CHAP_B', 'CHAP_C']
         perform_ensemble = True
     else:
         models = [model]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    for model in models:
-        if not os.path.exists(os.path.join(output_dir, '{}'.format(model))):
-            os.makedirs(os.path.join(output_dir, '{}'.format(model)))
+    for model_name in models:
+        # Load saved model
+        bi_lstm_win_size = bi_lstm_window_sizes[model_name] * int(60*downsample_window)
+        model = CNNBiLSTMModel(amp_factor=amp_factor, bi_lstm_win_size=bi_lstm_win_size, num_classes=num_classes)
+        checkpoint_path = os.path.join(model_ckpt_path, f"{model_name}.pth")
+        load_model_weights(model, checkpoint_path, weights_only=True)
+        model.to(device)
 
-        tf.reset_default_graph()
-        p = max(1, multiprocessing.cpu_count()//2)
-        sess = tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=p, intra_op_parallelism_threads=p))
-        tf.saved_model.loader.load(sess, ["serve"], os.path.join(model_ckpt_path, "{}".format(model)))
+        if not os.path.exists(os.path.join(output_dir, '{}'.format(model_name))):
+            os.makedirs(os.path.join(output_dir, '{}'.format(model_name)))
 
+        if not silent:
+            logger.info('Processing model {}'.format(model_name))
 
         for subject_id in subject_ids:
-            if not args.silent:
+            if not silent:
                 logger.info('Starting prediction generation for the subject {}'.format(subject_id))
             data = list(input_iterator(pre_processed_data_dir, subject_id))
             x, timestamps, labels = [d[0].reshape(-1, int(1/downsample_window * cnn_window_size),
-                                          int(gt3x_frequency*downsample_window), 1) for d in data], [d[1] for d in data], [d[2] for d in data]
-            fout = open(os.path.join(output_dir, "{}".format(model), "{}.csv".format(subject_id)), 'w')
+                                        int(gt3x_frequency*downsample_window), 1) for d in data], [d[1] for d in data], [d[2] for d in data]
+            fout = open(os.path.join(output_dir, "{}".format(model_name), "{}.csv".format(subject_id)), 'w')
 
             if segment:
                 fout.write('segment,')
@@ -100,9 +100,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
             fout.write(',prediction\n')
 
             for n in range(len(x)):
-                wanna_be = bi_lstm_window_sizes[model] * \
-                            int(60*downsample_window)
-                border = x[n].shape[0] % wanna_be
+                border = x[n].shape[0] % bi_lstm_win_size
                 wrapped = False
                 zeroed = False
                 if border != 0:
@@ -112,11 +110,9 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                         labels[n] = labels[n][:-border]
                         # deficit = wanna_be - border
                         # print("Dropped: {} sec".format((42 - deficit) * 10))
-
-
                     else:
                         
-                        deficit = wanna_be - border
+                        deficit = bi_lstm_win_size - border
                         increment = int(1 / downsample_window)
                         labels_padded = np.full(deficit, -1)
 
@@ -135,22 +131,39 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                             
                         if padding == "wrap":
                             x_last_p1 = x[n][:-border]
-                            x_last_p2 = x[n][-wanna_be:] 
+                            x_last_p2 = x[n][-bi_lstm_win_size:] 
                             x[n] = np.vstack((x_last_p1, x_last_p2))
                             wrapped = True
                         labels[n] = np.hstack((labels[n], labels_padded))
 
-                y_pred = []
-                for k in range(0, x[n].shape[0], bi_lstm_window_sizes[model] * int(60*downsample_window)):
-                    temp = x[n][k:k + bi_lstm_window_sizes[model] * int(60*downsample_window)]
-                    y_pred.append(sess.run('output:0', feed_dict={'input:0': temp}).flatten())
-                y_pred = np.array(y_pred).flatten()
-                
+                # Reshape data to the dimensions of first layer
+                subject_data = x[n].squeeze()
+                reshaped_subject_data = np.split(subject_data, subject_data.shape[0]//bi_lstm_win_size)
+
+                test_dataloader = get_subject_dataloader(
+                test_subjects_data=reshaped_subject_data,
+                batch_size=batch_size,
+                )
+
+                preds = []
+                if test_dataloader != None:
+                    with torch.no_grad():
+                        for inputs in test_dataloader:
+                            inputs = inputs.to(device, dtype=torch.float32)
+                            inputs = inputs.view(-1, int(cnn_window_size * 1.0/downsample_window), 3, 1)
+                            inputs = inputs.permute(0, 3, 1, 2)
+                            outputs = model(inputs)
+                            pred = torch.sigmoid(outputs)
+                            pred = torch.round(pred)
+                            np_preds = pred.cpu().detach().numpy().flatten().tolist()
+                            preds+=np_preds
+                            
+                y_pred = np.array(preds)
+
                 if padding == "wrap" and wrapped:
-                    y_pred = np.hstack((y_pred[:-wanna_be], y_pred[-border:]))
+                    y_pred = np.hstack((y_pred[:-bi_lstm_win_size], y_pred[-border:]))
                 elif padding == "zero" and zeroed:
                     y_pred = y_pred[:-deficit]
-
 
                 for t, l, pred in zip(timestamps[n], labels[n], y_pred):
                     formatstr = ""
@@ -171,7 +184,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
                     fout.write(formatstr.format(*values))
 
             fout.close()
-            if not args.silent:
+            if not silent:
                 logger.info('Completed prediction generation for the subject {}'.format(subject_id))
 
     if perform_ensemble:
@@ -234,6 +247,7 @@ def generate_predictions(pre_processed_data_dir, output_dir, model, segment, out
 
 
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Argument parser for generating model predictions.')
     optional_arguments = parser._action_groups.pop()
@@ -254,12 +268,33 @@ if __name__ == "__main__":
     optional_arguments.add_argument('--activpal-label-map', help='ActivPal label vocabulary (default: {"sitting": 0, "not-sitting": 1, "no-label": -1})', default='{"sitting": 0, "not-sitting": 1, "no-label": -1}', required=False)
     optional_arguments.add_argument('--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
     optional_arguments.add_argument(
-        '--padding',
-        type=str,
-        help='Padding scheme for the last part of data that does not fill a whole lstm window (default: %(default)s)',
-        default='drop',
-        choices=('drop', 'zero', 'wrap')
+    '--padding',
+    type=str,
+    help='Padding scheme for the last part of data that does not fill a whole lstm window (default: %(default)s)',
+    default='drop',
+    choices=('drop', 'zero', 'wrap')
     )
+    optional_arguments.add_argument(
+            "--batch-size",
+            help="Inference batch size (default: 16)",
+            default=16,
+            type=int,
+            required=False,
+        )
+    optional_arguments.add_argument(
+            "--amp-factor",
+            help="Factor to increase the number of neurons in the CNN layers (default: 2)",
+            default=2,
+            type=int,
+            required=False,
+        )
+    optional_arguments.add_argument(
+            "--num-classes",
+            help="Number of classes in the training dataset (default: 2)",
+            default=2,
+            type=int,
+            required=False,
+        )
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
 
@@ -283,9 +318,9 @@ if __name__ == "__main__":
             print('Loading custom model from checkpoint path: {}'.format(args.model_checkpoint_path))
         args.model = 'CUSTOM_MODEL'
     else:
-        args.model_checkpoint_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models')
+        args.model_checkpoint_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pre-trained-models-pt')
 
     generate_predictions(args.pre_processed_dir, output_dir=args.predictions_dir, model=args.model, segment=not args.no_segment, output_label=args.output_label,
         label_map=label_map, downsample_window=1.0/args.down_sample_frequency, bi_lstm_window_sizes=bi_lstm_window_sizes,
-        cnn_window_size=args.cnn_window_size, gt3x_frequency=args.gt3x_frequency, model_ckpt_path=args.model_checkpoint_path, padding=args.padding)
-
+        cnn_window_size=args.cnn_window_size, gt3x_frequency=args.gt3x_frequency, amp_factor = args.amp_factor, num_classes = args.num_classes,
+        model_ckpt_path=args.model_checkpoint_path, silent = args.silent, batch_size = args.batch_size, padding=args.padding,)

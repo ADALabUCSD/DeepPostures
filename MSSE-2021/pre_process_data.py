@@ -1,4 +1,4 @@
-# Copyright 2021 Supun Nakandala. All Rights Reserved.
+# Copyright 2024 Animesh Kumar. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ from datetime import datetime
 from datetime import timedelta
 from functools import partial
 import gzip
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, values_being_written, CNN_WINDOW_SIZE, RESOLUTION):
     # File path
@@ -47,9 +47,9 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
         time_values.append(
             time.mktime(temp[0][0].timetuple()))
         data_values.append([[x[1], x[2], x[3]] for x in temp])
-        non_wear_values.append(mode([x[4] for x in temp])[0][0])
-        sleeping_values.append(mode([x[5] for x in temp])[0][0])
-        label_values.append(mode([x[6] for x in temp])[0][0])
+        non_wear_values.append(mode([x[4] for x in temp])[0])
+        sleeping_values.append(mode([x[5] for x in temp])[0])
+        label_values.append(mode([x[6] for x in temp])[0])
 
     # flush data, free memory
     h5f_out = h5py.File(subject_data_file_path, "w")
@@ -98,9 +98,10 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, non_wear_dict
             lambda x: timedelta(seconds=round(x * 10) / 10.))
         event_intervals = ap_df['Interval (s)'].tolist()
         # Fix for column name inconsistency in ActivPal
-        ap_df = ap_df.rename(columns={
-                             'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
-        event_labels = ap_df['ActivityCode (0=sedentary, 1=standing, 2=stepping)'].apply(
+        ap_df.columns = ap_df.columns.map(lambda col: 'ActivityCode' if col.startswith('ActivityCode') else col)
+        # ap_df = ap_df.rename(columns={
+        #                      'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
+        event_labels = ap_df['ActivityCode'].apply(
             lambda x: label_map[str(x)]).tolist()
 
     def check_label(pointer, check_time):
@@ -222,6 +223,19 @@ def fn(
             shutil.rmtree(output_dir_path)
 
 
+def get_date_string(string):
+    
+    patterns = [
+        (r'\b\d{2}/\d{2}/\d{4}\b', '%m/%d/%Y'),  # for '%m/%d/%Y'
+        (r'\b\d{4}-\d{2}-\d{2}\b', '%Y-%m-%d'),  # for '%Y-%m-%d'
+    ]
+
+    for pattern, date_format in patterns:
+        if re.search(pattern, string):
+            return date_format
+    
+    return ""
+
 def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_map, sleep_logs_file=None, non_wear_times_file=None, activpal_events_csv_dir_root=None,
                                 n_start_ID=None, n_end_ID=None, expression_after_ID=None, pre_process_data_output_dir='./pre-processed', mp=None, gzipped=False):
     """
@@ -271,7 +285,8 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
         with open(valid_days_file) as f:
             lines = f.readlines()
             header = lines[0].lower().split(",")[:2]
-            if header[0].strip() != "id" or header[1].strip() != "date.valid.day":
+            header = [head.replace("\"",'') for head in header]
+            if header[0].strip().lower() != "id" or header[1].strip() != "date.valid.day":
                 raise Exception(
                     'valid_days_file should have two header columns (ID, Date.valid.day).')
 
@@ -281,17 +296,19 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                     continue
 
                 splits = line.split(",")
+                splits = [split.replace("\"",'') for split in splits]
                 id = splits[0].strip()
                 d = splits[1].strip()
+                date_string = get_date_string(d)
                 try:
-                    d = datetime.strptime(d, '%m/%d/%Y')
+                    d = datetime.strptime(d, date_string)
                     if id in concurrent_wear_dict:
                         concurrent_wear_dict[id].append(d)
                     else:
                         concurrent_wear_dict[id] = [d]
                 except:
                     raise Exception(
-                        'In {}, Date.valid.day column in should be in %m/%d/%Y format. Found: {}.'.format(valid_days_file, line))
+                        'In {}, Date.valid.day column in should be in (%m/%d/%Y or %Y/%m/%d or %Y-%m-%d or %m-%d-%Y) format. Found: {}.'.format(valid_days_file, line))
 
     # 3. sleep_logs_file
     sleep_logs_dict = {}
@@ -305,36 +322,74 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
         with open(sleep_logs_file) as f:
             lines = f.readlines()
             header = lines[0].lower().split(",")[:5]
-            if header[0].strip() != "id" or header[1].strip() != "date.in.bed" or header[2].strip() != "time.in.bed" \
-                    or header[3].strip() != "date.out.bed" or header[4].strip() != "time.out.bed":
+            header = [head.replace("\"",'') for head in header]
+            # CHAP1.0 
+            if len(header) == 5:
+                if header[0].strip() != "id" or header[1].strip() != "date.in.bed" or header[2].strip() != "time.in.bed" \
+                        or header[3].strip() != "date.out.bed" or header[4].strip() != "time.out.bed":
+                    raise Exception(
+                        'sleep_logs_file should have five header columns (ID, Date.In.Bed, Time.In.Bed, Date.Out.Bed, Time.Out.Bed).')
+
+                for line in lines[1:]:
+                    line = line.strip()
+                    if line == "":
+                        continue
+
+                    bits = line.split(",")
+                    id = bits[0].strip()
+                    if id not in sleep_logs_dict:
+                        sleep_logs_dict[id] = []
+
+                    try:
+                        start_time = datetime.strptime(
+                            bits[1].strip() + " " + bits[2].strip(), "%m/%d/%Y %H:%M")
+                    except:
+                        raise Exception(
+                            "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(sleep_logs_file, line))
+
+                    try:
+                        end_time = datetime.strptime(
+                            bits[3].strip() + " " + bits[4], "%m/%d/%Y %H:%M")
+                    except:
+                        raise Exception(
+                            "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(sleep_logs_file, line))
+
+                    sleep_logs_dict[id].append((start_time, end_time))
+            elif len(header) == 3: #CHAP2.0
+                if header[0].strip() != "id" or header[1].strip() != "startsleep" or header[2].strip() != "endsleep":
+                    raise Exception(
+                        'sleep_logs_file should have three header columns (ID, startsleep, endsleep).')
+
+                for line in lines[1:]:
+                    line = line.strip()
+                    if line == "":
+                        continue
+
+                    bits = line.split(",")
+                    bits = [bit.replace("\"",'') for bit in bits]
+                    id = bits[0].strip()
+                    if id not in sleep_logs_dict:
+                        sleep_logs_dict[id] = []
+
+                    try:
+                        start_time = datetime.strptime(bits[1].strip(), "%Y-%m-%d %H:%M:%S")
+                    except:
+                        raise Exception(
+                            "In {}, date should be in %Y-%m-%d format and time should be in %H:%M:%S format. Found: {}".format(sleep_logs_file, line))
+
+                    try:
+                        end_time = datetime.strptime(bits[2].strip(), "%Y-%m-%d %H:%M:%S")
+                    except:
+                        raise Exception(
+                            "In {}, date should be in %Y-%m-%d format and time should be in %H:%M:%S format. Found: {}".format(sleep_logs_file, line))
+
+                    sleep_logs_dict[id].append((start_time, end_time))
+            else:
                 raise Exception(
-                    'sleep_logs_file should have five header columns (ID, Date.In.Bed, Time.In.Bed, Date.Out.Bed, Time.Out.Bed).')
+                        'sleep_logs_file should have three/five header columns. Found: {}'.format(header))
 
-            for line in lines[1:]:
-                line = line.strip()
-                if line == "":
-                    continue
 
-                bits = line.split(",")
-                id = bits[0].strip()
-                if id not in sleep_logs_dict:
-                    sleep_logs_dict[id] = []
 
-                try:
-                    start_time = datetime.strptime(
-                        bits[1].strip() + " " + bits[2].strip(), "%m/%d/%Y %H:%M")
-                except:
-                    raise Exception(
-                        "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(sleep_logs_file, line))
-
-                try:
-                    end_time = datetime.strptime(
-                        bits[3].strip() + " " + bits[4], "%m/%d/%Y %H:%M")
-                except:
-                    raise Exception(
-                        "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(sleep_logs_file, line))
-
-                sleep_logs_dict[id].append((start_time, end_time))
 
     # 4. non_wear_times_file
     non_wear_dict = {}
@@ -350,6 +405,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
         with open(non_wear_times_file) as f:
             lines = f.readlines()
             header = lines[0].lower().split(",")[:5]
+            header = [head.replace("\"",'') for head in header]
             if header[0].strip() != "id" or header[1].strip() != "date.nw.start" or header[2].strip() != "time.nw.start" \
                     or header[3].strip() != "date.nw.end" or header[4].strip() != "time.nw.end":
                 raise Exception(
@@ -360,23 +416,28 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                 if line == "":
                     continue
                 bits = line.split(",")
+                bits = [bit.replace("\"",'') for bit in bits]
                 id = bits[0].strip()
                 if id not in non_wear_dict:
                     non_wear_dict[id] = []
+                
+                date_string = get_date_string(bits[1].strip())
 
                 try:
                     start_time = datetime.strptime(
-                        bits[1].strip() + " " + bits[2].strip(), "%m/%d/%Y %H:%M")
+                        bits[1].strip() + " " + bits[2].strip(), f"{date_string} %H:%M")
                 except:
                     raise Exception(
-                        "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(non_wear_times_file, line))
+                        "In {}, date should be in {} format and time should be in %H:%M format. Found: {}".format(date_string, non_wear_times_file, line))
+
+                date_string = get_date_string(bits[3].strip())
 
                 try:
                     end_time = datetime.strptime(
-                        bits[3].strip() + " " + bits[4], "%m/%d/%Y %H:%M")
+                        bits[3].strip() + " " + bits[4], f"{date_string} %H:%M")
                 except:
                     raise Exception(
-                        "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(non_wear_times_file, line))
+                        "In {}, date should be in {} format and time should be in %H:%M format. Found: {}".format(date_string, non_wear_times_file, line))
 
                 non_wear_dict[id].append((start_time, end_time))
 

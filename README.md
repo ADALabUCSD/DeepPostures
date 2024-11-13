@@ -4,35 +4,35 @@ DeepPostures
 
 This repository contains the code artifacts released as part of the following publications:
 
-- /JMPB-2021 : **Application of Convolutional Neural Network Algorithms for Advancing Sedentary and Activity Bout Classification**, Journal for the Measurement of Physical Behaviour, [DOI](https://doi.org/10.1123/jmpb.2020-0016)|[Paper](https://adalabucsd.github.io/papers/2021_JMPB_CNN.pdf)
 - /MSSE-2021 : **The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults**
 
 **We strongly suggest the user start with our website and use the MSSE-2021 folder as it contains the latest iteration of our research.**
 
+> The current codebase has been migrated to PyTorch. To access the previous Tensorflow implementation switch to `tensorflow` branch. The tensorflow branch contains implementation for both `/JMPB-2021` and `/MSSE-2021` 
 
 Pre-Requisites
 --------------
 We recommend first [installing Anaconda](https://docs.anaconda.com/anaconda/install/) and then running the following commands to setup the environment. We also recommend using a machine that has GPU support, specially if you plan to train your own models. A CPU machine can be used if the goal is using pre-trained models to predict posture.
 
-    conda env create -f INFRA/CONDA/deep_postures_gpu_env.yml # for cpu use INFRA/CONDA/deep_postures_cpu_env.yml
+    conda env create -f INFRA/CONDA/deep_postures_pt_gpu.yml # for cpu use INFRA/CONDA/deep_postures_pt_cpu.yml
     conda activate deep_postures
 
 
 Alternatively, you can use conda to install Python 3 and use `pip` to install the following rerquired packages.
     
-    conda create -n deep_postures python=3.6
-    conda activate deep_postures
-    python -m pip install "tensorflow-gpu>=1.13.0,<2.0" # for cpu use "tensorflow>=1.13.0,<2.0"
-    python -m pip install pandas
-    python -m pip install numpy
-    python -m pip install scipy
-    python -m pip install h5py
+    pip install torch==2.4.1
+    pip install numpy
+    pip install pandas
+    pip install scipy
+    pip install h5py
+    pip install scikit-learn==1.5.2
+    pip install tqdm==4.66.6
 
 
 Instructions
 ------------
 - Clone the repository using git `git clone https://github.com/ADALabUCSD/DeepPostures.git`
-- Navigate to the code directory of the publication you want to explore and follow the instructions in the README file there.
+- Navigate to the code directory of the publication you want to explore and follow the instructions in the README file there. The `main` branch with the PyTorch only has implementation for `MSSE-2021`. The `tensorflow` branch has implementation for both `MSSE-2021` and `JMPB-2021`
 - If you face any problems/issues, please create an issue in GitHub issue tracker.
 
 
