@@ -31,6 +31,8 @@ Complete usage details of this script are as follows:
                         [--silent]
                         [--output-file OUTPUT_FILE]
                         [--run-test]
+                        [--run-sanity-validation]
+                        [--model-checkpoint-interval MODEL_CHECKPOINT_INTERVAL]
 
     Argument parser for training CNN model.
 
@@ -83,7 +85,11 @@ Complete usage details of this script are as follows:
     --silent              Whether to hide info messages
     --output-file OUTPUT_FILE
                             Output file to log training metric
-    --run-test            Run test pipeline after training
+    --run-test              Run test pipeline after training
+    --run-sanity-validation
+                            Run sanity validation on the model before training
+    --model-checkpoint-interval MODEL_CHECKPOINT_INTERVAL
+                            Interval to save model checkpoint (default: 1)
 
 **Model Selection:** Notice that this script relies on several hyperparameters required for training the model such as learning rate, batch size, and BiLSTM window size etc. The script comes with set of default values for these parameters. However, you may need to tweak these parameters for your dataset to get the best performance.
 

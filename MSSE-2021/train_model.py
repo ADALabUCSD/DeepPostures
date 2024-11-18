@@ -24,6 +24,7 @@ import argparse
 import json
 import numpy as np
 import pandas as pd
+import time
 
 
 from tqdm import tqdm
@@ -32,7 +33,7 @@ from utils import write_metrics_to_csv, load_model_weights
 from model import CNNBiLSTMModel
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from datetime import datetime
+
 
 
 # torch imports
@@ -221,15 +222,32 @@ if __name__ == "__main__":
         required=False,
         action="store_true",
     )
+    optional_arguments.add_argument(
+        "--run-sanity-validation",
+        default=False,
+        required=False,
+        action="store_true",
+        help="Run sanity validation on the model before training",
+    )
+    optional_arguments.add_argument(
+        "--model-checkpoint-interval",
+        default=1,
+        type=int,
+        help="Interval to save model checkpoint (default: 1)",
+    )
 
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
+
+    main_start_time = time.time()
 
     # Precheck on directories
     if os.path.exists(args.model_checkpoint_path):
         raise Exception(
             "Model checkpoint: {} already exists.".format(args.model_checkpoint_path)
         )
+    if not os.path.exists(os.path.join(args.model_checkpoint_path, "checkpoint")):
+        os.makedirs(os.path.join(args.model_checkpoint_path, "checkpoint"))
 
     if args.transfer_learning_model:
         if args.transfer_learning_model == "CUSTOM_MODEL":
@@ -263,7 +281,7 @@ if __name__ == "__main__":
         subject_ids,
         args.training_data_fraction,
         args.testing_data_fraction,
-        args.run_test
+        args.run_test,
     )
 
     output_shapes = (
@@ -291,25 +309,74 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
+    if not args.silent:
+        print("Training on {} subjects: {}".format(len(train_subjects), train_subjects))
+        print("Validation on {} subjects: {}".format(len(valid_subjects), valid_subjects))
+        print("Testing on {} subjects: {}".format(len(test_subjects), test_subjects))
+
     # Set optimizer and Loss function
     criterion = nn.BCEWithLogitsLoss(weight=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-
-    if not args.silent:
-        print("Training subjects: {}".format(train_subjects))
-        print("Validation subjects: {}".format(valid_subjects))
-        print("Testing subjects: {}".format(test_subjects))
     metrics = []
-    for epoch in tqdm(range(args.num_epochs)):
-        train_dataloader, valid_dataloader, _ = get_dataloaders(
-            pre_processed_dir=args.pre_processed_dir,
-            bi_lstm_win_size=bi_lstm_win_size,
-            batch_size=args.batch_size,
-            train_subjects=train_subjects,
-            valid_subjects=valid_subjects,
-            test_subjects=None,
-        )
 
+    # Load dataloaders
+    train_dataloader, valid_dataloader, test_dataloader = get_dataloaders(
+        pre_processed_dir=args.pre_processed_dir,
+        bi_lstm_win_size=bi_lstm_win_size,
+        batch_size=args.batch_size,
+        train_subjects=train_subjects,
+        valid_subjects=valid_subjects,
+        test_subjects=test_subjects if test_subjects else None,
+    )
+
+    if args.run_sanity_validation:
+        print("Running sanity validation")
+        # Validation loop
+        model.eval()
+        validation_accuracy = 0.0
+        n_batches = 0
+        epoch_val_acc = None
+        if valid_dataloader != None:
+            with torch.no_grad():
+                for inputs, labels in valid_dataloader:
+                    inputs, labels = inputs.to(device, dtype=torch.float32), labels.to(
+                        device, dtype=torch.float32
+                    )
+
+                    inputs = inputs.view(
+                        -1, args.cnn_window_size * args.down_sample_frequency, 3, 1
+                    )
+                    # convert to (N, H, W, C) to (N, C, H, W)
+                    inputs = inputs.permute(0, 3, 1, 2)
+                    labels = labels.view(-1, bi_lstm_win_size)
+                    # outputs
+                    outputs = model(inputs)
+                    # convert to 1D tensor
+                    outputs = outputs.view(-1)
+                    labels = labels.view(-1)
+                    # convert label to one hot
+                    labels_one_hot = torch.nn.functional.one_hot(
+                        labels.long(), num_classes=args.num_classes
+                    )
+                    labels = labels_one_hot.view(-1, args.num_classes)
+                    labels = torch.argmax(labels, dim=1).to(torch.float32)
+                    # Calulate accuracy
+                    preds = torch.round(torch.sigmoid(outputs))
+                    batch_acc = accuracy_score(
+                        preds.cpu().detach().numpy(), labels.cpu().detach().numpy()
+                    )
+                    validation_accuracy += batch_acc
+
+                    # Calculate loss
+                    loss = criterion(outputs, labels)
+                    n_batches += 1
+
+            epoch_val_acc = validation_accuracy / n_batches
+        print(f"Sanity Validation Accuracy: {epoch_val_acc:.2%}")
+
+    print("Running Training")
+    for epoch in tqdm(range(args.num_epochs)):
+        start_time = time.time()  # Start the timer for the epoch
         model.train()
         running_loss = 0.0
         training_accuracy = 0.0
@@ -402,25 +469,46 @@ if __name__ == "__main__":
             epoch_val_loss = val_loss / n_batches
             epoch_val_acc = validation_accuracy / n_batches
 
+        end_time = time.time()
+        epoch_duration = end_time - start_time
+        if valid_dataloader != None:
             if not args.silent:
                 print(
-                    f"Epoch [{epoch+1}/{args.num_epochs}], Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Val Loss: {epoch_val_loss:.4f}, Val Accuracy: {epoch_val_acc:.2%}"
+                    f"Epoch [{epoch+1}/{args.num_epochs}], Runtime: {epoch_duration:.2f} seconds, Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Val Loss: {val_loss:.4f}, Val Accuracy: {epoch_val_acc:.2%}"
                 )
         else:
             if not args.silent:
                 print(
-                    f"Epoch [{epoch+1}/{args.num_epochs}], Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}"
+                    f"Epoch [{epoch+1}/{args.num_epochs}], Runtime: {epoch_duration:.2f} seconds, Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}"
                 )
         # Add a new entry for the current epoch
         metrics.append(
             {
                 "epoch": epoch + 1,
+                "runtime": epoch_duration,
                 "train_loss": epoch_train_loss,
                 "train_acc": epoch_train_accuracy,
                 "val_loss": epoch_val_loss,
                 "val_acc": epoch_val_acc,
             }
         )
+        # Save model checkpoint
+        if (
+            args.model_checkpoint_interval
+            and epoch % args.model_checkpoint_interval == 0
+        ):
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    # ... other items you want to save
+                },
+                os.path.join(
+                    os.path.join(args.model_checkpoint_path, "checkpoint"),
+                    f"checkpoint_epoch_{epoch}.pth",
+                ),
+            )
 
     # Log metric values
     write_metrics_to_csv(metrics, args.output_file)
@@ -437,16 +525,8 @@ if __name__ == "__main__":
     print("Model saved in path: {}".format(args.model_checkpoint_path))
 
     # Testing pipeline
+    print("Running Testing")
     if test_subjects:
-        _, _, test_dataloader = get_dataloaders(
-            pre_processed_dir=args.pre_processed_dir,
-            bi_lstm_win_size=bi_lstm_win_size,
-            batch_size=args.batch_size,
-            train_subjects=None,
-            valid_subjects=None,
-            test_subjects=test_subjects,
-        )
-
         del model
         model = CNNBiLSTMModel(args.amp_factor, bi_lstm_win_size, args.num_classes)
         load_model_weights(
@@ -493,3 +573,5 @@ if __name__ == "__main__":
 
             test_accuracy = test_accuracy / n_batches
         print(f"Test Accuracy: {test_accuracy:.2%}")
+    main_end_time = time.time()
+    print(f"Done!!\nTotal time taken: {main_end_time - main_start_time:.2f} seconds")

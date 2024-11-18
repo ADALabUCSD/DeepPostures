@@ -19,6 +19,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from datetime import datetime, timedelta
+from tqdm import tqdm
 
 
 class IterDataset(torch.utils.data.IterableDataset):
@@ -26,11 +27,14 @@ class IterDataset(torch.utils.data.IterableDataset):
     PyTorch IterableDataset created from a generator
     """
 
-    def __init__(self, generator):
+    def __init__(self, generator, data_root=None, win_size_10s=None, subject_ids=None):
         self.generator = generator
+        self.data_root = data_root
+        self.win_size_10s = win_size_10s
+        self.subject_ids = subject_ids
 
     def __iter__(self):
-        return self.generator
+        return iter(self.generator(self.data_root, self.win_size_10s, self.subject_ids))
 
 
 def input_iterator(data_root, subject_id, train=False):
@@ -89,7 +93,7 @@ def window_generator(data_root, win_size_10s, subject_ids):
     Generate windowed to be processed by CNN
     """
 
-    for subject_id in subject_ids:
+    for subject_id in tqdm(subject_ids):
         for x_seq, _, y_seq in input_iterator(data_root, subject_id, train=True):
             x_window = []
             y_window = []
@@ -135,7 +139,7 @@ def get_dataloaders(
 
     if train_subjects:
         train_data = IterDataset(
-            window_generator(pre_processed_dir, bi_lstm_win_size, train_subjects)
+            window_generator, pre_processed_dir, bi_lstm_win_size, train_subjects
         )
         train_dataloader = DataLoader(
             train_data, batch_size=batch_size, pin_memory=True
@@ -143,14 +147,14 @@ def get_dataloaders(
 
     if valid_subjects:
         valid_data = IterDataset(
-            window_generator(pre_processed_dir, bi_lstm_win_size, valid_subjects)
+            window_generator, pre_processed_dir, bi_lstm_win_size, valid_subjects
         )
         valid_dataloader = DataLoader(
             valid_data, batch_size=batch_size, pin_memory=True
         )
     if test_subjects:
         test_data = IterDataset(
-            window_generator(pre_processed_dir, bi_lstm_win_size, test_subjects)
+            window_generator, pre_processed_dir, bi_lstm_win_size, test_subjects
         )
         test_dataloader = DataLoader(test_data, batch_size=batch_size, pin_memory=True)
 
