@@ -175,6 +175,12 @@ if __name__ == "__main__":
         required=False,
     )
     optional_arguments.add_argument(
+        "--weight-decay",
+        help="L2 regulatization weight decay",
+        type=float,
+        required=False,
+    )
+    optional_arguments.add_argument(
         "--num-epochs",
         help="Number of epochs to train the model (default: 15)",
         default=15,
@@ -408,7 +414,7 @@ if __name__ == "__main__":
 
     # Set optimizer and Loss function
     criterion = nn.BCEWithLogitsLoss(weight=class_weights)
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     metrics = []
 
     # Load dataloaders
