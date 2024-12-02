@@ -311,6 +311,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Using device", "cuda" if torch.cuda.is_available() else "cpu")
+    print("Arguments: ", args)
 
     # Precheck on directories
     if os.path.exists(args.model_checkpoint_path):
@@ -622,8 +623,8 @@ if __name__ == "__main__":
     print("Model saved in path: {}".format(args.model_checkpoint_path))
 
     # Testing pipeline
-    print("Running Testing")
     if test_subjects:
+        print("Running Testing")
         del model
         model = CNNBiLSTMModel(args.amp_factor, bi_lstm_win_size, args.num_classes)
         load_model_weights(
