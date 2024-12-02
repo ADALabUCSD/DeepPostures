@@ -4,6 +4,8 @@ Gemfile.lock
 example_out
 predictions
 preprocessed
+model-checkpoint
+output_metrics.csv
 __pycache__
 /local
 .DS_Store

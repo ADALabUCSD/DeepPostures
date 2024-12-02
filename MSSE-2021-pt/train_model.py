@@ -178,6 +178,7 @@ if __name__ == "__main__":
         "--weight-decay",
         help="L2 regulatization weight decay",
         type=float,
+        default=0.0,
         required=False,
     )
     optional_arguments.add_argument(
@@ -304,7 +305,14 @@ if __name__ == "__main__":
     optional_arguments.add_argument(
         "--model-checkpoint-interval",
         default=1,
+        required=False,
         type=int,
+    )
+    optional_arguments.add_argument(
+        "--lr-scheduler",
+        default=None,
+        required=False,
+        choices=["linear"],
     )
 
     parser._action_groups.append(optional_arguments)
@@ -416,6 +424,10 @@ if __name__ == "__main__":
     # Set optimizer and Loss function
     criterion = nn.BCEWithLogitsLoss(weight=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    scheduler = None
+    if args.lr_scheduler:
+        if args.lr_scheduler == "linear":
+            scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0.1, total_iters=args.num_epochs)
     metrics = []
 
     # Load dataloaders
@@ -607,6 +619,10 @@ if __name__ == "__main__":
                     f"checkpoint_epoch_{epoch}.pth",
                 ),
             )
+        # Step the scheduler
+        if scheduler:
+            scheduler.step()
+            print(f"Learning rate: {scheduler.get_last_lr()}")
 
     # Log metric values
     write_metrics_to_csv(metrics, args.output_file)
