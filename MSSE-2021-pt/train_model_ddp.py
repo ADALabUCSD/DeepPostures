@@ -27,10 +27,14 @@ import pandas as pd
 import time
 
 from tqdm import tqdm
-from commons import get_dataloaders
-from utils import write_metrics_to_csv, load_model_weights, compute_accuracy_from_confusion_matrix
+from commons import get_dataloaders_dist
+from utils import (
+    write_metrics_to_csv,
+    load_model_weights,
+    compute_accuracy_from_confusion_matrix,
+)
 from model import CNNBiLSTMModel
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
@@ -39,10 +43,30 @@ from sklearn.metrics import confusion_matrix
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.distributed as dist
+import torch.multiprocessing as mp
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
+
 
 # Set random seeds
 random.seed(2019)
 np.random.seed(2019)
+
+
+def setup_ddp(rank, world_size):
+    os.environ["MASTER_ADDR"] = "localhost"  # The address of the master node
+    os.environ["MASTER_PORT"] = "12355"  # A free port for communication
+
+    dist.init_process_group(
+        backend="nccl",  # Backend, 'nccl' works well with GPUs
+        rank=rank,
+        world_size=world_size,
+    )
+
+
+def cleanup_ddp():
+    dist.destroy_process_group()
 
 
 def custom_transfer_learning_model_config(args):
@@ -148,38 +172,60 @@ def create_splits(
         return train_subjects, valid_subjects, test_subjects
 
 
-def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, train_subjects, valid_subjects, test_subjects):
-    
+def train(
+    rank,
+    world_size,
+    args,
+    bi_lstm_win_size,
+    class_weights,
+    transfer_learning_model_path,
+    train_subjects,
+    valid_subjects,
+    test_subjects,
+):
+    # setup
+    setup_ddp(rank, world_size)
+
+    print(f"Setup done for rank {rank}")
+    device = torch.device(f"cuda:{rank}")
+
     # Load model
-    model = CNNBiLSTMModel(args.amp_factor, bi_lstm_win_size, args.num_classes)
+    model = CNNBiLSTMModel(args.amp_factor, bi_lstm_win_size, args.num_classes).to(
+        device
+    )
 
     if args.transfer_learning_model:
         load_model_weights(model, transfer_learning_model_path, weights_only=False)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    model = DDP(model, device_ids=[rank])
 
     # Set optimizer and Loss function
     criterion = nn.BCEWithLogitsLoss(weight=class_weights)
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    optimizer = optim.Adam(
+        model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
+    )
     scheduler = None
-    if args.lr_scheduler:
-        if args.lr_scheduler == "linear":
-            scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0.1, total_iters=args.num_epochs)
+    if args.lr_scheduler == "linear":
+        scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=1.0, end_factor=0.1, total_iters=args.num_epochs
+        )
     metrics = []
 
     # Load dataloaders
-    train_dataloader, valid_dataloader, test_dataloader = get_dataloaders(
+    train_dataloader, valid_dataloader, test_dataloader = get_dataloaders_dist(
         pre_processed_dir=args.pre_processed_dir,
         bi_lstm_win_size=bi_lstm_win_size,
         batch_size=args.batch_size,
         train_subjects=train_subjects,
         valid_subjects=valid_subjects,
         test_subjects=test_subjects if test_subjects else None,
+        rank=rank,
+        world_size=world_size,
     )
 
     if args.run_sanity_validation:
-        print("Running sanity validation")
+        print(f"Running sanity validation in rank - {rank}")
+
         # Validation loop
         model.eval()
         # Initialize confusion matrix for the current epoch
@@ -208,18 +254,35 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
                     )
                     labels = labels_one_hot.view(-1, args.num_classes)
                     labels = torch.argmax(labels, dim=1).to(torch.float32)
+
                     # Calulate accuracy
                     preds = torch.round(torch.sigmoid(outputs))
-                    
+
                     # Compute confusion matrix for the batch
-                    batch_cm = confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy(), labels=np.arange(args.num_classes))
+                    batch_cm = confusion_matrix(
+                        labels.cpu().numpy(),
+                        preds.cpu().numpy(),
+                        labels=np.arange(args.num_classes),
+                    )
                     cm_sanity_val += batch_cm
 
+            # Reduce confusion matrix across all processes
+            cm_sanity_val_tensor = torch.tensor(cm_sanity_val, device=rank)
+            dist.reduce(
+                cm_sanity_val_tensor, dst=0, op=dist.ReduceOp.SUM
+            )  # Aggregate on rank 0
 
-            sanity_val_accuracy, sanity_val_balanced_accuracy = compute_accuracy_from_confusion_matrix(cm_sanity_val)
-            print(f"Sanity Validation Accuracy: {sanity_val_accuracy:.2%} Balanced Accuracy: {sanity_val_balanced_accuracy:.2%}")
-    
-    print("Running Training")
+            if rank == 0:
+                # Compute accuracy on rank 0
+                cm_sanity_val = cm_sanity_val_tensor.cpu().numpy()
+                sanity_val_accuracy, sanity_val_balanced_accuracy = (
+                    compute_accuracy_from_confusion_matrix(cm_sanity_val)
+                )
+                print(
+                    f"Sanity Validation Accuracy: {sanity_val_accuracy:.2%} Balanced Accuracy: {sanity_val_balanced_accuracy:.2%}"
+                )
+
+    print("Running Training in rank - ", rank)
     for epoch in tqdm(range(args.num_epochs)):
         start_time = time.time()  # Start the timer for the epoch
         model.train()
@@ -227,12 +290,12 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
         training_loss = 0.0
         n_batches_train = 0
         cm_train = np.zeros((args.num_classes, args.num_classes), dtype=np.int64)
+
         for inputs, labels in train_dataloader:
             inputs, labels = inputs.to(device, dtype=torch.float32), labels.to(
                 device, dtype=torch.float32
             )
             batch_size = labels.shape[0]
-
             inputs = inputs.view(
                 -1, args.cnn_window_size * args.down_sample_frequency, 3, 1
             )
@@ -254,7 +317,11 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
             # Calulate accuracy
             preds = torch.round(torch.sigmoid(outputs))
             # Compute confusion matrix for the batch
-            batch_cm = confusion_matrix(labels.cpu().detach().numpy(), preds.cpu().detach().numpy(), labels=np.arange(args.num_classes))
+            batch_cm = confusion_matrix(
+                labels.cpu().detach().numpy(),
+                preds.cpu().detach().numpy(),
+                labels=np.arange(args.num_classes),
+            )
             cm_train += batch_cm
 
             # Convert back to batch size for faster calculation
@@ -262,12 +329,25 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
             outputs = outputs.view(batch_size, -1)
             labels = labels.view(batch_size, -1)
 
-            #Calculate loss
+            # Calculate loss
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             training_loss += loss.item() * outputs.size(0)
             n_batches_train += 1
+
+        # Reduce confusion matrix across all processes
+        cm_train_tensor = torch.tensor(cm_train, device=rank)
+        training_loss_tensor = torch.tensor(training_loss, device=rank)
+        n_batches_train_tensor = torch.tensor(n_batches_train, device=rank)
+
+        dist.reduce(cm_train_tensor, dst=0, op=dist.ReduceOp.SUM)  # Aggregate on rank 0
+        dist.reduce(
+            training_loss_tensor, dst=0, op=dist.ReduceOp.SUM
+        )  # Aggregate on rank 0
+        dist.reduce(
+            n_batches_train_tensor, dst=0, op=dist.ReduceOp.SUM
+        )  # Aggregate on rank 0
 
         # Validation loop
         model.eval()
@@ -287,7 +367,6 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
                     )
                     # convert to (N, H, W, C) to (N, C, H, W)
                     inputs = inputs.permute(0, 3, 1, 2)
-                    labels = labels.view(-1, bi_lstm_win_size)
                     # outputs
                     outputs = model(inputs)
                     # convert to 1D tensor
@@ -319,92 +398,121 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
                     val_loss += loss.item() * outputs.size(0)
                     n_batches_val += 1
 
+            # Reduce confusion matrix across all processes
+            cm_val_tensor = torch.tensor(cm_val, device=rank)
+            val_loss_tensor = torch.tensor(val_loss, device=rank)
+            n_batches_val_tensor = torch.tensor(n_batches_val, device=rank)
+
+            dist.reduce(
+                cm_val_tensor, dst=0, op=dist.ReduceOp.SUM
+            )  # Aggregate on rank 0
+            dist.reduce(
+                val_loss_tensor, dst=0, op=dist.ReduceOp.SUM
+            )  # Aggregate on rank 0
+            dist.reduce(
+                n_batches_val_tensor, dst=0, op=dist.ReduceOp.SUM
+            )  # Aggregate on rank 0
+
         end_time = time.time()
         epoch_duration = end_time - start_time
 
-        # Compute Metrics
-        epoch_train_accuracy, epoch_train_balanced_accuracy = (
-            compute_accuracy_from_confusion_matrix(cm_train)
-        )
-        epoch_train_loss = training_loss / n_batches_train
-
-        if valid_dataloader != None:
-            epoch_val_accuracy, epoch_val_balanced_accuracy = (
-                compute_accuracy_from_confusion_matrix(cm_val)
+        # Metrics and checkpointing for the epoch
+        if rank == 0:
+            cm_train = cm_train_tensor.cpu().numpy()
+            training_loss = training_loss_tensor.cpu().numpy()
+            n_batches_train = n_batches_train_tensor.cpu().numpy()
+            epoch_train_accuracy, epoch_train_balanced_accuracy = (
+                compute_accuracy_from_confusion_matrix(cm_train)
             )
-            epoch_val_loss = val_loss / n_batches_val
+            epoch_train_loss = training_loss / n_batches_train
 
-            if not args.silent:
+            if valid_dataloader != None:
+                cm_val = cm_val_tensor.cpu().numpy()
+                val_loss = val_loss_tensor.cpu().numpy()
+                n_batches_val = n_batches_val_tensor.cpu().numpy()
+                epoch_val_accuracy, epoch_val_balanced_accuracy = (
+                    compute_accuracy_from_confusion_matrix(cm_val)
+                )
+                epoch_val_loss = val_loss / n_batches_val
+
+                if not args.silent:
                     print(
                         f"Epoch [{epoch+1}/{args.num_epochs}], Runtime: {epoch_duration:.2f} seconds, Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Train Balanced Accuracy: {epoch_train_balanced_accuracy:.2%}, Val Loss: {epoch_val_loss:.4f}, Val Accuracy: {epoch_val_accuracy:.2%}, Balanced Accuracy: {epoch_val_balanced_accuracy:.2%}"
                     )
-        else:
-            if not args.silent:
-                print(
-                    f"Epoch [{epoch+1}/{args.num_epochs}], Runtime: {epoch_duration:.2f} seconds, Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Train Accuracy: {epoch_train_accuracy:.2%}, Train Balanced Accuracy: {epoch_train_balanced_accuracy:.2%}"
-                )
-        # Add a new entry for the current epoch
-        metrics.append(
-            {
-                "epoch": epoch + 1,
-                "runtime": epoch_duration,
-                "train_loss": epoch_train_loss,
-                "train_acc": epoch_train_accuracy,
-                "train_balanced_acc": epoch_train_balanced_accuracy,
-                "val_loss": epoch_val_loss,
-                "val_acc": epoch_val_accuracy,
-                "val_balanced_acc": epoch_val_balanced_accuracy,
-            }
-        )
-        # Save model checkpoint
-        if (
-            args.model_checkpoint_interval
-            and epoch % args.model_checkpoint_interval == 0
-        ):
-            torch.save(
+            else:
+                if not args.silent:
+                    print(
+                        f"Epoch [{epoch+1}/{args.num_epochs}], Runtime: {epoch_duration:.2f} seconds, Train Loss: {epoch_train_loss:.4f}, Train Accuracy: {epoch_train_accuracy:.2%}, Train Accuracy: {epoch_train_accuracy:.2%}, Train Balanced Accuracy: {epoch_train_balanced_accuracy:.2%}"
+                    )
+            # Add a new entry for the current epoch
+            metrics.append(
                 {
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    # ... other items you want to save
-                },
-                os.path.join(
-                    os.path.join(args.model_checkpoint_path, "checkpoint"),
-                    f"checkpoint_epoch_{epoch}.pth",
-                ),
+                    "epoch": epoch + 1,
+                    "runtime": epoch_duration,
+                    "train_loss": epoch_train_loss,
+                    "train_acc": epoch_train_accuracy,
+                    "train_balanced_acc": epoch_train_balanced_accuracy,
+                    "val_loss": epoch_val_loss,
+                    "val_acc": epoch_val_accuracy,
+                    "val_balanced_acc": epoch_val_balanced_accuracy,
+                }
             )
+            # Save model checkpoint
+            if (
+                args.model_checkpoint_interval
+                and epoch % args.model_checkpoint_interval == 0
+            ):
+                torch.save(
+                    {
+                        "epoch": epoch,
+                        "model_state_dict": model.module.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        # ... other items you want to save
+                    },
+                    os.path.join(
+                        os.path.join(args.model_checkpoint_path, "checkpoint"),
+                        f"checkpoint_epoch_{epoch}.pth",
+                    ),
+                )
+            # Log metric values
+            write_metrics_to_csv(metrics, args.output_file)
+            # Save model
+            if not args.silent:
+                print("Training finished.")
+
+            # if the model is wrapped in DDP, unwrap it before saving
+            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+                # Extract the underlying model
+                model = model.module
+
+            if not os.path.exists(args.model_checkpoint_path):
+                os.makedirs(args.model_checkpoint_path)
+            torch.save(
+                model.state_dict(),
+                os.path.join(args.model_checkpoint_path, "CUSTOM_MODEL.pth"),
+            )
+            print("Model saved in path: {}".format(args.model_checkpoint_path))
+
         # Step the scheduler
         if scheduler:
             scheduler.step()
             print(f"Learning rate: {scheduler.get_last_lr()}")
 
-    # Log metric values
-    write_metrics_to_csv(metrics, args.output_file)
-    # Save model
-    if not args.silent:
-        print("Training finished.")
-
-    if not os.path.exists(args.model_checkpoint_path):
-        os.makedirs(args.model_checkpoint_path)
-    torch.save(
-        model.state_dict(),
-        os.path.join(args.model_checkpoint_path, "CUSTOM_MODEL.pth"),
-    )
-    print("Model saved in path: {}".format(args.model_checkpoint_path))
-
     # Testing pipeline
     if test_subjects:
-        print("Running Testing")
+        print("Running Testing in rank - ", rank)
         del model
-        model = CNNBiLSTMModel(args.amp_factor, bi_lstm_win_size, args.num_classes)
+        model = CNNBiLSTMModel(args.amp_factor, bi_lstm_win_size, args.num_classes).to(device)
         load_model_weights(
             model,
             os.path.join(args.model_checkpoint_path, "CUSTOM_MODEL.pth"),
             weights_only=True,
         )
-        model.to(device)
+
+        model = DDP(model, device_ids=[rank])
         model.eval()
 
+        # Initialize confusion matrix for the current epoch
         cm_test = np.zeros((args.num_classes, args.num_classes), dtype=np.int64)
         with torch.no_grad():
             for inputs, labels in test_dataloader:
@@ -439,12 +547,25 @@ def train(args, bi_lstm_win_size, class_weights, transfer_learning_model_path, t
                 )
                 cm_test += batch_cm
 
-            test_accuracy, test_balanced_accuracy = (
+            # Reduce confusion matrix across all processes
+            cm_test_tensor = torch.tensor(cm_test, device=rank)
+            dist.reduce(
+                cm_test_tensor, dst=0, op=dist.ReduceOp.SUM
+            )  # Aggregate on rank 0
+
+            if rank == 0:
+                # Compute accuracy on rank 0
+                cm_test = cm_test_tensor.cpu().numpy()
+                test_accuracy, test_balanced_accuracy = (
                     compute_accuracy_from_confusion_matrix(cm_test)
                 )
-            print(
-                f"Test Accuracy: {test_accuracy:.2%} Balanced Test Accuracy: {test_balanced_accuracy:.2%}"
-            )
+                print(
+                    f"Test Accuracy: {test_accuracy:.2%} Balanced Test Accuracy: {test_balanced_accuracy:.2%}"
+                )
+
+    # Clean up DDP
+    cleanup_ddp()
+
 
 if __name__ == "__main__":
     main_start_time = time.time()
@@ -477,8 +598,8 @@ if __name__ == "__main__":
         "--weight-decay",
         help="L2 regulatization weight decay",
         type=float,
-        default=0.0,
         required=False,
+        default=0.0,
     )
     optional_arguments.add_argument(
         "--num-epochs",
@@ -604,8 +725,8 @@ if __name__ == "__main__":
     optional_arguments.add_argument(
         "--model-checkpoint-interval",
         default=1,
-        required=False,
         type=int,
+        required=False,
     )
     optional_arguments.add_argument(
         "--lr-scheduler",
@@ -617,7 +738,14 @@ if __name__ == "__main__":
     parser._action_groups.append(optional_arguments)
     args = parser.parse_args()
 
-    print("Using device", "cuda" if torch.cuda.is_available() else "cpu")
+    print(
+        "Using device",
+        (
+            f"cuda devices: {torch.cuda.device_count()}"
+            if torch.cuda.is_available()
+            else "cpu"
+        ),
+    )
     print("Arguments: ", args)
 
     # Precheck on directories
@@ -711,14 +839,25 @@ if __name__ == "__main__":
         )
         print("Testing on {} subjects: {}".format(len(test_subjects), test_subjects))
 
-    train(
-        args,
-        bi_lstm_win_size,
-        class_weights,
-        transfer_learning_model_path,
-        train_subjects,
-        valid_subjects,
-        test_subjects,
+    # DDP setup
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
+    world_size = torch.cuda.device_count()
+
+    mp.spawn(
+        train,
+        args=(
+            world_size,
+            args,
+            bi_lstm_win_size,
+            class_weights,
+            transfer_learning_model_path,
+            train_subjects,
+            valid_subjects,
+            test_subjects,
+        ),
+        nprocs=world_size,
     )
+
     main_end_time = time.time()
     print(f"Done!!\nTotal time taken: {main_end_time - main_start_time:.2f} seconds")
