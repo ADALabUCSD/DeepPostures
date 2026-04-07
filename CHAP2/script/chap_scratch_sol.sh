@@ -3,7 +3,7 @@ torchrun --nproc_per_node=4 -m main_finetune_long \
 --data_path "/niddk-data-central/SOL/PASOS/train/SOL_10hz" \
 --remark CHAP-FT  \
 --blr 1e-3 \
---model CNNBiLSTMModel \
+--model CHAP \
 --epochs 10 \
 --warmup_epochs 2 \
 --batch_size 16 \

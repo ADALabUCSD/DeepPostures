@@ -48,7 +48,7 @@ import random
 from einops import rearrange
 from tqdm import tqdm
 
-from chap_model import CNNBiLSTMModel,CNNAttentionModel,FeatureExtractorWrapper
+from chap_model import CHAP,CNNAttentionModel,FeatureExtractorWrapper
 from util.chap_utils import load_model_weights
 from util.commons import get_subjectwise_dataloaders
 from omegaconf import OmegaConf
@@ -258,23 +258,23 @@ def main(args):
 
     # TODO: package below into a model factory function
     # CHAP replicate #######
-    if args.model == 'CNNBiLSTMModel': 
-        model = CNNBiLSTMModel(2,42,2)
+    if args.model == 'CHAP':
+        model = CHAP(2,42,2)
 
         if args.checkpoint:
             msg = load_model_weights(model, args.checkpoint, weights_only=False)
         else:
-            print("training CNNBiLSTMModel from scratch")
+            print("training CHAP from scratch")
         
     
     elif args.model == 'CNNBiLSTMAttentionModel':
         # add attention on top of CNNBiLSTM
-        base_model = CNNBiLSTMModel(2,42,2)
-        
+        base_model = CHAP(2,42,2)
+
         if args.checkpoint:
             msg = load_model_weights(model, args.checkpoint, weights_only=False)
         else:
-            print("training CNNBiLSTMModel from scratch")
+            print("training CHAP from scratch")
 
 
         base_model_hidden_dim = base_model.fc_bilstm.in_features # 256
@@ -290,7 +290,7 @@ def main(args):
                                           learnable_pos_embed=cfg.model.learnable_pos_embed,)
 
     elif args.model == 'CNNAttentionModel':
-        base_model = CNNBiLSTMModel(2,42,2)
+        base_model = CHAP(2,42,2)
         if cfg.model.transfer_learning_model_path:
             msg = load_model_weights(base_model, cfg.model.transfer_learning_model_path, weights_only=False)
             print(msg)
@@ -488,7 +488,7 @@ def main(args):
     #     if param.grad is None:
     #         print(f"[DDP UNUSED PARAM] {name}")
 
-    if args.model == 'CNNBiLSTMModel':
+    if args.model == 'CHAP':
         optimizer = create_optimizer_v2(
             model_without_ddp,
             opt='adamw',
@@ -651,7 +651,7 @@ torchrun --nproc_per_node=4 -m main_finetune_long \
 --data_path "/niddk-data-central/SOL/PASOS/train/SOL_10hz" \
 --remark CHAP-FT  \
 --blr 1e-3 \
---model CNNBiLSTMModel \
+--model CHAP \
 --checkpoint "/app/DeepPostures_MAE/MSSE_2021_pt/pre-trained-models-pt/CHAP_ALL_ADULTS.pth" \
 --epochs 10 \
 --warmup_epochs 2 \

@@ -59,12 +59,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if True: #criterion.__class__.__name__ == 'BCEWithLogitsLoss':
             targets = targets.float()
         
-        if args.model == 'CNNBiLSTMModel':
+        if args.model == 'CHAP':
             samples = rearrange(samples, 'b w l c -> (b w) 1 l c ')
             
         with torch.cuda.amp.autocast(enabled=False):
             outputs = model(samples)
-            if args.model == 'CNNBiLSTMModel':
+            if args.model == 'CHAP':
                 outputs = outputs.view(-1)
             else:
                 outputs = rearrange(outputs, 'b w c -> (b w) c').squeeze(-1)
@@ -164,12 +164,12 @@ def evaluate(args,data_loader, model, device):
             target = target.float()
             target = target.view(-1).squeeze()
 
-        if args.model == 'CNNBiLSTMModel': # CHAP
+        if args.model == 'CHAP': # CHAP
             samples = rearrange(samples, 'b w l c -> (b w) 1 l c ')
             
         with torch.cuda.amp.autocast(enabled=False):
             outputs = model(samples)
-            if args.model == 'CNNBiLSTMModel':
+            if args.model == 'CHAP':
                 outputs = outputs.view(-1)
             else:
                 outputs = rearrange(outputs, 'b w c -> (b w) c').squeeze(-1)

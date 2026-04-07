@@ -13,7 +13,7 @@ torchrun --nproc_per_node=4 -m main_finetune_long \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/W" \
 --remark CHAP-FT  \
 --blr 1e-3 \
---model CNNBiLSTMModel \
+--model CHAP \
 --checkpoint "/DeepPostures_MAE/MSSE_2021_pt/pre-trained-models-pt/CHAP_ALL_ADULTS.pth" \
 --epochs 40 \
 --warmup_epochs 8 \
@@ -28,7 +28,7 @@ torchrun --nproc_per_node=4 -m main_finetune_long \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/H" \
 --remark CHAP-FT  \
 --blr 1e-3 \
---model CNNBiLSTMModel \
+--model CHAP \
 --checkpoint "/DeepPostures_MAE/MSSE_2021_pt/pre-trained-models-pt/CHAP_ALL_ADULTS.pth" \
 --epochs 40 \
 --warmup_epochs 8 \

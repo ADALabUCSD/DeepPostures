@@ -3,8 +3,8 @@ CHAP 2.0 — Finetuning for Wrist & Hip Accelerometer Posture Classification
 
 This repository contains the **PyTorch** codebase for classifying sedentary and activity postures from accelerometer data. It includes all models from the paper:
 
-- **CHAP-ZS**: Zero-shot CNN-BiLSTM model
-- **CHAP-FT**: Finetuned CNN-BiLSTM model for posture classification
+- **CHAP-ZS**: Zero-shot CHAP model (no finetuning)
+- **CHAP-FT**: Finetuned CHAP model for posture classification
 - **CHAP-ViT**: Vision Transformer-based model variants (ViT-base, ViT-small, ViT-tiny)
 
 All models support finetuning on both hip and wrist (iWatch) accelerometer datasets, including SOL/PASOS.
@@ -19,7 +19,7 @@ Repository Structure
 CHAP2/                      # Main finetuning pipeline
 ├── example_models.py       # Example: model instantiation, weight loading, inference
 ├── main_finetune.py        # Finetuning entry point
-├── chap_model.py           # CNN-BiLSTM model definitions (CHAP-FT / CHAP-ZS)
+├── chap_model.py           # CHAP model definitions (CHAP-FT / CHAP-ZS)
 ├── models_vit.py           # Vision Transformer model definitions (CHAP-ViT)
 ├── vision_transformer.py   # ViT with Rotary Position Embedding (RoPE)
 ├── engine_finetune.py      # Training and evaluation loops
@@ -43,6 +43,22 @@ support_files/              # Validation data and participant-level agreement fi
 ```
 
 
+Submitted Weights (SUBMIT_RESULT)
+----------------------------------
+
+Each subdirectory in `CHAP2/SUBMIT_RESULT/` contains a `checkpoint/checkpoint-submit.pth` and per-subject prediction CSVs. Below is a summary of each weight:
+
+All weights are CHAP models (CNN-BiLSTM architecture) initialized from CHAP 1.0 pre-trained weights (ACT + AUSDIAB hip cohorts, stored in `MSSE_2021_pt/pre-trained-models-pt/`). CHAP-FT checkpoints are finetuned starting from their respective CHAP-ZS weights.
+
+| Weight | Finetuned On | Notes |
+|--------|--------------|-------|
+| `H/CHAP-ZS` | — (zero-shot) | Directly applies the pre-trained hip model to iWatch hip data without any finetuning. |
+| `H/CHAP-FT` | iWatch Hip | Finetuned from `H/CHAP-ZS` on iWatch hip data (40 epochs, lr=1e-3). See `script/chap_ft_iwatch.sh`. |
+| `W/CHAP-ZS` | — (zero-shot) | Directly applies the pre-trained hip model to iWatch wrist data without any finetuning. |
+| `W/CHAP-FT` | iWatch Wrist | Finetuned from `W/CHAP-ZS` on iWatch wrist data (40 epochs, lr=1e-3). See `script/chap_ft_iwatch.sh`. |
+| `CHAP_FT_SOL` | SOL/PASOS Wrist | Finetuned on SOL/PASOS wrist data (10 epochs, lr=1e-3). See `script/chap_ft_sol.sh`. |
+
+
 Pre-Requisites
 --------------
 - Python 3.8+
@@ -58,16 +74,16 @@ pip install -r CHAP2/requirements.txt
 Usage
 -----
 
-See `CHAP2/example_models.py` for a self-contained example of how to instantiate each model, load pretrained weights, and run inference. It covers CHAP 2.0 (CNN-BiLSTM), CHAP-ZS (CNN-BiLSTM + Attention), and CHAP-ViT.
+See `CHAP2/example_models.py` for a self-contained example of how to instantiate each model, load pretrained weights, and run inference. It covers CHAP 2.0 (CHAP-FT), CHAP-ZS, and CHAP-ViT.
 
 Training scripts are located in `CHAP2/script/`. Example:
 
 ```bash
 cd CHAP2
-bash script/iwatch_vit.sh
+bash script/chap_ft_sol.sh
 ```
 
-See individual scripts for dataset paths and hyperparameter configurations.
+The provided `.sh` scripts are examples. Edit them to change dataset paths, hyperparameters, or other input parameters to suit your setup.
 
 
 Related Publications

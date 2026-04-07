@@ -99,11 +99,11 @@ class CNNModel(nn.Module):
         return x
 
 
-class CNNBiLSTMModel(nn.Module):
+class CHAP(nn.Module):
     def __init__(
         self, amp_factor, bi_lstm_win_size, num_classes
     ):
-        super(CNNBiLSTMModel, self).__init__()
+        super(CHAP, self).__init__()
         self.cnn_model = CNNModel(amp_factor=amp_factor)
         self.hidden_size = 128
         self.bil_lstm = nn.LSTM(

@@ -23,14 +23,14 @@ import numpy as np
 # ============================================================================
 
 def example_chap_ft():
-    from chap_model import CNNBiLSTMModel
+    from chap_model import CHAP
     from util.chap_utils import load_model_weights
 
     # Model parameters
     #   amp_factor=2:        channel amplification (CNN channels = 32*2, 64*2, ..., 256*2)
     #   bi_lstm_win_size=42: number of 10s windows per sample
     #   num_classes=2:       binary classification (sedentary vs. active)
-    model = CNNBiLSTMModel(amp_factor=2, bi_lstm_win_size=42, num_classes=2)
+    model = CHAP(amp_factor=2, bi_lstm_win_size=42, num_classes=2)
 
     # Load submitted weights
     checkpoint_path = "SUBMIT_RESULT/H/CHAP-FT/checkpoint/checkpoint-submit.pth"
@@ -46,7 +46,7 @@ def example_chap_ft():
 
     # --- Input format ---
     # Raw input shape: (batch_size, 42, 100, 3)
-    # CNNBiLSTMModel expects flattened windows: (batch_size * 42, 1, 100, 3)
+    # CHAP expects flattened windows: (batch_size * 42, 1, 100, 3)
     batch_size = 4
     x = torch.randn(batch_size, 42, 100, 3)  # simulated accelerometer data
     x_flat = x.view(-1, 1, 100, 3)            # (4*42, 1, 100, 3) = (168, 1, 100, 3)
@@ -67,10 +67,10 @@ def example_chap_ft():
 # ============================================================================
 
 def example_chap_zs():
-    from chap_model import CNNBiLSTMModel, CNNAttentionModel, FeatureExtractorWrapper
+    from chap_model import CHAP, CNNAttentionModel, FeatureExtractorWrapper
 
     # Step 1: Create the CNN-BiLSTM base model
-    base_model = CNNBiLSTMModel(amp_factor=2, bi_lstm_win_size=42, num_classes=2)
+    base_model = CHAP(amp_factor=2, bi_lstm_win_size=42, num_classes=2)
 
     # Step 2: Wrap it as a feature extractor (outputs BiLSTM hidden states)
     base_model_hidden_dim = base_model.fc_bilstm.in_features  # 256 (bidirectional LSTM output)
