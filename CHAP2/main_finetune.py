@@ -43,19 +43,14 @@ from models_mae import AttentionProbeModel
 import pandas as pd
 
 import pickle
-import sys
 
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-print('Adding path to sys.path:', path)
-sys.path.append(path)
- 
 import random
 from einops import rearrange
 from tqdm import tqdm
 
-from MSSE_2021_pt.model import CNNBiLSTMModel,CNNAttentionModel,FeatureExtractorWrapper
-from MSSE_2021_pt.utils import load_model_weights
-from MSSE_2021_pt.commons import get_subjectwise_dataloaders
+from chap_model import CNNBiLSTMModel,CNNAttentionModel,FeatureExtractorWrapper
+from util.chap_utils import load_model_weights
+from util.commons import get_subjectwise_dataloaders
 from omegaconf import OmegaConf
 
 def get_args_parser():
