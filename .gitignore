@@ -1,0 +1,16 @@
+_site
+Gemfile.lock
+.bundles_cache
+example_out
+predictions
+preprocessed
+model-checkpoint
+output_metrics.csv
+__pycache__
+/local
+.DS_Store
+.ipynb_checkpoints
+envs
+support_files/
+tmp_result/
+assest/
