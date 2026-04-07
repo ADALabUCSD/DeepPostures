@@ -1,7 +1,13 @@
 CHAP 2.0 — Finetuning for Wrist & Hip Accelerometer Posture Classification
 ============================================================================
 
-This repository contains the **PyTorch** codebase for CHAP 2.0, a Vision Transformer (ViT)-based model for classifying sedentary and activity postures from accelerometer data. It supports finetuning on both hip and wrist (iWatch) accelerometer datasets, including SOL/PASOS.
+This repository contains the **PyTorch** codebase for classifying sedentary and activity postures from accelerometer data. It includes all models from the paper:
+
+- **CHAP-ZS**: Zero-shot CNN-BiLSTM model
+- **CHAP-FT**: Finetuned CNN-BiLSTM model for posture classification
+- **CHAP-ViT**: Vision Transformer-based model variants (ViT-base, ViT-small, ViT-tiny)
+
+All models support finetuning on both hip and wrist (iWatch) accelerometer datasets, including SOL/PASOS.
 
 For the legacy TensorFlow code and earlier publications, see the `master` branch.
 
@@ -10,20 +16,30 @@ Repository Structure
 --------------------
 
 ```
-CHAP2/                  # Main finetuning pipeline (ViT-based)
-├── main_finetune.py    # Finetuning entry point
-├── models_vit.py       # Vision Transformer model definitions
-├── engine_finetune.py  # Training and evaluation loops
-├── util/               # Utilities (learning rate, data, etc.)
-├── script/             # Training launch scripts
-│   ├── iwatch_vit.sh           # iWatch hip ViT finetuning
-│   ├── chap_ft_iwatch.sh       # iWatch wrist CHAP finetuning
-│   ├── chap_ft_sol.sh          # SOL dataset finetuning
-│   └── chap_scratch_sol.sh     # SOL training from scratch
-└── SUBMIT_RESULT/      # Submission-ready results
+CHAP2/                      # Main finetuning pipeline
+├── example_models.py       # Example: model instantiation, weight loading, inference
+├── main_finetune.py        # Finetuning entry point
+├── chap_model.py           # CNN-BiLSTM model definitions (CHAP-FT / CHAP-ZS)
+├── models_vit.py           # Vision Transformer model definitions (CHAP-ViT)
+├── vision_transformer.py   # ViT with Rotary Position Embedding (RoPE)
+├── engine_finetune.py      # Training and evaluation loops
+├── requirements.txt        # Python dependencies
+├── util/                   # Utilities (learning rate, data, loss, etc.)
+├── script/                 # Training launch scripts
+│   ├── iwatch_vit.sh               # iWatch CHAP-ViT finetuning
+│   ├── chap_ft_iwatch.sh           # iWatch CHAP-FT finetuning
+│   ├── chap_ft_sol.sh              # SOL dataset CHAP-FT finetuning
+│   └── chap_scratch_sol.sh         # SOL training from scratch
+└── SUBMIT_RESULT/          # Submitted checkpoints and predictions
+    ├── H/                          # Hip models
+    │   ├── CHAP-FT/checkpoint/     # CHAP-FT weights
+    │   └── CHAP-ZS/checkpoint/     # CHAP-ZS weights
+    └── W/                          # Wrist models
+        ├── CHAP-FT/checkpoint/
+        └── CHAP-ZS/checkpoint/
 
-MSSE_2021_pt/           # PyTorch port of CNN/BiLSTM baselines (CHAP 1.0)
-support_files/          # Validation data and participant-level agreement files
+MSSE_2021_pt/               # PyTorch port of CNN/BiLSTM baselines (CHAP 1.0)
+support_files/              # Validation data and participant-level agreement files
 ```
 
 
@@ -41,6 +57,8 @@ pip install -r CHAP2/requirements.txt
 
 Usage
 -----
+
+See `CHAP2/example_models.py` for a self-contained example of how to instantiate each model, load pretrained weights, and run inference. It covers CHAP 2.0 (CNN-BiLSTM), CHAP-ZS (CNN-BiLSTM + Attention), and CHAP-ViT.
 
 Training scripts are located in `CHAP2/script/`. Example:
 
