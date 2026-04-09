@@ -288,7 +288,7 @@ def get_dataloaders(
 from torch.utils.data import Subset
 from collections import defaultdict
 
-def get_subjectwise_dataloaders(dataset, batch_size=32, num_workers=4, shuffle=False):
+def get_subjectwise_dataloaders(dataset, batch_size=32, num_workers=0, shuffle=False):
     # Build a dictionary mapping from subject_id to list of indices
     subject_indices = defaultdict(list)
     for i in range(len(dataset)):

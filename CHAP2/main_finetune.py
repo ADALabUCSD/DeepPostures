@@ -11,7 +11,7 @@
 
 import argparse
 import datetime
-import json
+
 import os
 import time
 from pathlib import Path
@@ -21,31 +21,25 @@ import shutil
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
+
 import wandb
 # from timm.scheduler.cosine_lr import CosineLRScheduler
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-import timm
+
 # from config import FT_LONG_DATASET_CONFIG
 from util.datasets import data_aug, iWatch 
 import util.misc as misc
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 from timm.optim import create_optimizer_v2
-from util.pos_embed import interpolate_pos_embed
-import util.lr_decay as lrd  # for optimizer
-import models_vit
-from models_mae import ClassiferHeadWrapper, MaskedAutoencoderViT
 from engine_finetune import train_one_epoch, evaluate
 from util.loss import BinaryFocalLoss
-from models_mae import AttentionProbeModel
 import pandas as pd
 
 import pickle
 
-import random
-from einops import rearrange
+
 from tqdm import tqdm
 
 from chap_model import CHAP,CNNAttentionModel,FeatureExtractorWrapper
@@ -54,7 +48,7 @@ from util.commons import get_subjectwise_dataloaders
 from omegaconf import OmegaConf
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('MAE linear probing for image classification', add_help=False)
+    parser = argparse.ArgumentParser('CHAP-FT', add_help=False)
     parser.add_argument('--config', default=None, type=str,
                         help='path to config file (default: None, use default config)')
     parser.add_argument('--batch_size', default=64, type=int,
@@ -194,7 +188,7 @@ def main(args):
     transform=None
     if args.use_data_aug:
         transform=data_aug
-
+    
     dataset_train = iWatch(
         set_type='train',
         root=args.data_path,
@@ -225,7 +219,6 @@ def main(args):
         num_workers=int(args.num_workers//2),
         pin_memory=args.pin_mem,
         drop_last=True,
-        prefetch_factor=int(args.num_workers//2),
     )
 
     data_loader_val = torch.utils.data.DataLoader(
@@ -352,7 +345,7 @@ def main(args):
 
     if args.eval:
         # Evaluate 
-        checkpoint = torch.load(args.eval,map_location='cpu')
+        checkpoint = torch.load(args.eval,map_location='cpu',weights_only=False)
         try:
             checkpoint_model = checkpoint['model']
             print(checkpoint['args'])
@@ -396,7 +389,7 @@ def main(args):
                 subject_performance['val'][subject_id]['f1'] = test_stats['f1']
 
             # save subject_performance in loacl folder
-            output_dir = os.path.join('/DeepPostures_MAE/subject_level_performance',args.model,f'{args.remark}_subject_performance.pkl')
+            output_dir = os.path.join('subject_level_performance',args.model,f'{args.remark}_subject_performance.pkl')
             
             Path(os.path.dirname(output_dir)).mkdir(parents=True, exist_ok=True)
             with open(output_dir, 'wb') as f:
@@ -632,7 +625,7 @@ if __name__ == '__main__':
     
     args.log_dir = os.path.join(args.log_dir,args.remark,f'{initial_timestamp.strftime("%Y-%m-%d_%H-%M")}')
     args.output_dir = os.path.join(args.output_dir,args.remark,f'{initial_timestamp.strftime("%Y-%m-%d_%H-%M")}')
-    if args.output_dir:
+    if args.output_dir and not args.eval:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
         Path(args.log_dir).mkdir(parents=True, exist_ok=True)
 
@@ -652,7 +645,7 @@ torchrun --nproc_per_node=4 -m main_finetune_long \
 --remark CHAP-FT  \
 --blr 1e-3 \
 --model CHAP \
---checkpoint "/app/DeepPostures_MAE/MSSE_2021_pt/pre-trained-models-pt/CHAP_ALL_ADULTS.pth" \
+--checkpoint "MSSE_2021_pt/pre-trained-models-pt/CHAP_ALL_ADULTS.pth" \
 --epochs 10 \
 --warmup_epochs 2 \
 --batch_size 16 \

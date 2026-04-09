@@ -8,7 +8,7 @@ echo "Current directory: $(pwd)"
 echo "Files:"
 ls -lah
 
-torchrun --nproc_per_node=4 -m main_finetune_long \
+torchrun --nproc_per_node=4 -m main_finetune \
 --ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/W" \
 --remark CHAP-FT  \
@@ -23,7 +23,7 @@ torchrun --nproc_per_node=4 -m main_finetune_long \
 --pos_weight 1.0 \
 --use_data_aug 1 
 
-torchrun --nproc_per_node=4 -m main_finetune_long \
+torchrun --nproc_per_node=4 -m main_finetune \
 --ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/H" \
 --remark CHAP-FT  \
