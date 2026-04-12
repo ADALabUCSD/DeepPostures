@@ -232,6 +232,8 @@ python create_dataset_split.py \
 
 ### Step 3: Generate predictions with a trained model
 
+After training your own model (or using the provided checkpoints), you can generate predictions by passing the model checkpoint path to `main_finetune` with the `--make_prediction` flag:
+
 ```bash
 python -m main_finetune \
   --data_path /path/to/output \
@@ -239,25 +241,79 @@ python -m main_finetune \
   --eval SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth \
   --make_prediction \
   --prediction_dir /path/to/save_predictions \
-  --ds_name iwatch \
   --batch_size 16 \
   --device cpu \
   --num_workers 0
 ```
 
-**What each flag means:**
+If you changed default parameters during training (e.g., `--input_size`, `--patch_size`), you must set the same values when generating predictions.
 
-| Flag | What it controls | What to put |
-|------|-----------------|-------------|
-| `--data_path` | Where your split HDF5 files are (from Step 2) | A folder containing `10s_train.h5`, `10s_val.h5`, `10s_test_complete.h5` |
-| `--model` | Which model architecture to use | `CHAP` for CNN-BiLSTM (recommended) |
-| `--eval` | Path to a trained model checkpoint | See "Available Checkpoints" below |
-| `--make_prediction` | Tells the program to generate predictions (not train) | Just include this flag, no value needed |
-| `--prediction_dir` | Where to save the prediction CSV files | Any folder path you choose |
-| `--ds_name` | Dataset loader to use | `iwatch` |
-| `--batch_size` | How many samples to process at once | `16` is a good default; reduce if you get memory errors |
-| `--device` | Run on CPU or GPU | `cpu` or `cuda` (use `cuda` if you have a GPU — much faster) |
-| `--num_workers` | Parallel data loading threads | `0` for debugging, `4` for speed |
+Complete usage details of `main_finetune` for prediction with all configuration options:
+
+    usage: main_finetune [-h] [--data_path DATA_PATH]
+                         [--model MODEL] [--eval EVAL]
+                         [--make_prediction] [--prediction_dir PREDICTION_DIR]
+                         [--batch_size BATCH_SIZE]
+                         [--device DEVICE] [--num_workers NUM_WORKERS]
+                         [--input_size INPUT_SIZE] [--patch_size PATCH_SIZE]
+                         [--patch_nvar PATCH_NVAR] [--in_chans IN_CHANS]
+                         [--nb_classes NB_CLASSES] [--seed SEED]
+                         [--pin_mem | --no_pin_mem]
+                         [--use_pos_embed | --no_use_pos_embed]
+                         [--use_rope] [--patch_emb PATCH_EMB]
+                         [--num_attn_layer NUM_ATTN_LAYER]
+                         [--subject_level_analysis]
+
+    Generate predictions with a trained model.
+
+    required arguments:
+      --data_path DATA_PATH
+                            Directory containing split HDF5 files from Step 2
+                            (must contain 10s_train.h5, 10s_val.h5,
+                            10s_test_complete.h5)
+      --eval EVAL           Path to a trained model checkpoint (.pth file).
+                            See "Available Checkpoints" below for provided weights
+      --make_prediction     Flag to enable prediction mode (no value needed)
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --model MODEL         Model architecture name. Use "CHAP" for the CNN-BiLSTM
+                            model, or "vit_base_patch16" / "vit_small_patch16" /
+                            "vit_tiny_patch16" for ViT variants (default:
+                            vit_base_patch16)
+      --prediction_dir PREDICTION_DIR
+                            Directory to save prediction CSV files (default: None)
+      --batch_size BATCH_SIZE
+                            Inference batch size (default: 64). Reduce if you get
+                            out-of-memory errors
+      --device DEVICE       Device for inference: "cpu" or "cuda" (default: cuda)
+      --num_workers NUM_WORKERS
+                            Number of parallel data loading workers. Use 0 for
+                            debugging, 4 for speed (default: 4)
+      --input_size INPUT_SIZE
+                            Model input size in timesteps (default: 4200, i.e.
+                            42 windows x 100 samples)
+      --patch_size PATCH_SIZE
+                            Patch size for ViT models in timesteps (default: 100)
+      --patch_nvar PATCH_NVAR
+                            Number of variables per patch (default: 1)
+      --in_chans IN_CHANS   Number of input channels / accelerometer axes
+                            (default: 3)
+      --nb_classes NB_CLASSES
+                            Number of output classes (default: 2)
+      --seed SEED           Random seed for reproducibility (default: 0)
+      --pin_mem             Pin CPU memory in DataLoader (default: True)
+      --no_pin_mem          Disable pinned memory
+      --use_pos_embed       Use positional embeddings (default: False)
+      --no_use_pos_embed    Disable positional embeddings
+      --use_rope            Use Rotary Position Embedding (default: False)
+      --patch_emb PATCH_EMB
+                            Patch embedding type (default: vit)
+      --num_attn_layer NUM_ATTN_LAYER
+                            Number of attention layers in AttentionProbeModel
+                            (default: 2)
+      --subject_level_analysis
+                            Enable per-subject analysis in output (default: False)
 
 ### Available Checkpoints
 
@@ -296,19 +352,137 @@ torchrun --nproc_per_node=<num_gpus> -m main_finetune \
   --use_data_aug 1
 ```
 
-**Additional flags for training:**
+For single-GPU or CPU training, use `python -m main_finetune` instead of `torchrun`.
 
-| Flag | What it controls | Default |
-|------|-----------------|---------|
-| `--checkpoint` | Pre-trained weights to start from (recommended) | None |
-| `--epochs` | Number of training passes over the data | 20 |
-| `--blr` | Base learning rate | 5e-4 |
-| `--weight_decay` | Regularization strength | 5e-2 |
-| `--warmup_epochs` | Gradual learning rate warmup period | 2 |
-| `--use_data_aug` | Data augmentation (`1` = on, `0` = off) | 1 |
-| `--output_dir` | Where to save trained checkpoints | — |
-| `--remark` | Name for this experiment (used in logs and filenames) | Debug |
-| `--resume` | Resume training from a saved checkpoint | — |
+Complete usage details of `main_finetune` for training with all configuration options:
+
+    usage: main_finetune [-h] [--config CONFIG] [--data_path DATA_PATH]
+                         [--model MODEL] [--checkpoint CHECKPOINT]
+                         [--output_dir OUTPUT_DIR] [--log_dir LOG_DIR]
+                         [--remark REMARK] [--epochs EPOCHS]
+                         [--batch_size BATCH_SIZE] [--accum_iter ACCUM_ITER]
+                         [--blr BLR] [--lr LR] [--min_lr MIN_LR]
+                         [--layer_decay LAYER_DECAY]
+                         [--warmup_epochs WARMUP_EPOCHS]
+                         [--weight_decay WEIGHT_DECAY]
+                         [--clip_grad CLIP_GRAD]
+                         [--use_data_aug USE_DATA_AUG]
+                         [--subset_ratio SUBSET_RATIO]
+                         [--use_focal_loss] [--pos_weight POS_WEIGHT]
+                         [--drop_path_rate DROP_PATH_RATE]
+                         [--device DEVICE] [--seed SEED]
+                         [--resume RESUME] [--start_epoch START_EPOCH]
+                         [--num_workers NUM_WORKERS]
+                         [--nb_classes NB_CLASSES]
+                         [--dist_eval] [--pin_mem | --no_pin_mem]
+
+    Finetune a model on accelerometer data.
+
+    configuration:
+      --config CONFIG       Path to YAML config file. Overrides command-line
+                            defaults (default: None)
+
+    required arguments:
+      --data_path DATA_PATH
+                            Directory containing split HDF5 files from Step 2
+                            (must contain 10s_train.h5, 10s_val.h5,
+                            10s_test_complete.h5)
+      --output_dir OUTPUT_DIR
+                            Directory to save trained checkpoints and logs
+
+    model arguments:
+      --model MODEL         Model architecture name. Use "CHAP" for the CNN-BiLSTM
+                            model, or "vit_base_patch16" / "vit_small_patch16" /
+                            "vit_tiny_patch16" for ViT variants (default:
+                            vit_base_patch16)
+      --checkpoint CHECKPOINT
+                            Path to pre-trained weights to initialize from.
+                            Recommended: use MSSE_2021_pt/pre-trained-models-pt/
+                            CHAP_ALL_ADULTS.pth for CHAP models (default: None)
+      --remark REMARK       Experiment name used in log filenames and output
+                            directories (default: Debug)
+      --input_size INPUT_SIZE
+                            Model input size in timesteps (default: 4200)
+      --patch_size PATCH_SIZE
+                            Patch size for ViT models (default: 100)
+      --patch_nvar PATCH_NVAR
+                            Number of variables per patch (default: 1)
+      --in_chans IN_CHANS   Number of input channels (default: 3)
+      --use_pos_embed       Use positional embeddings (default: False)
+      --no_use_pos_embed    Disable positional embeddings
+      --use_rope            Use Rotary Position Embedding (default: False)
+      --patch_emb PATCH_EMB
+                            Patch embedding type (default: vit)
+      --drop_path_rate DROP_PATH_RATE
+                            Stochastic depth / drop path rate (default: 0.1)
+      --num_attn_layer NUM_ATTN_LAYER
+                            Number of attention layers in AttentionProbeModel
+                            (default: 2)
+
+    optimizer arguments:
+      --blr BLR             Base learning rate. Actual lr = blr * total_batch_size
+                            / 256 (default: 5e-4)
+      --lr LR               Absolute learning rate. If set, overrides --blr
+                            (default: None)
+      --min_lr MIN_LR       Lower learning rate bound for cosine scheduler
+                            (default: 1e-6)
+      --layer_decay LAYER_DECAY
+                            Layer-wise learning rate decay factor (default: 0.75)
+      --warmup_epochs WARMUP_EPOCHS
+                            Number of epochs for linear learning rate warmup
+                            (default: 2)
+      --weight_decay WEIGHT_DECAY
+                            Weight decay / L2 regularization (default: 0.05)
+      --clip_grad CLIP_GRAD
+                            Gradient norm clipping threshold. None = no clipping
+                            (default: None)
+
+    training arguments:
+      --epochs EPOCHS       Total number of training epochs (default: 20)
+      --batch_size BATCH_SIZE
+                            Batch size per GPU. Effective batch size =
+                            batch_size * accum_iter * num_gpus (default: 64)
+      --accum_iter ACCUM_ITER
+                            Gradient accumulation steps. Increase to simulate
+                            larger batch sizes under memory constraints (default: 1)
+      --use_data_aug USE_DATA_AUG
+                            Enable data augmentation: 1 = on, 0 = off (default: 1)
+      --subset_ratio SUBSET_RATIO
+                            Fraction of training data to use. 1.0 = all data
+                            (default: 1.0)
+      --use_focal_loss      Use focal loss instead of BCEWithLogitsLoss for
+                            class-imbalanced data (default: False)
+      --pos_weight POS_WEIGHT
+                            Positive class weight for BCE loss (default: 1.0)
+      --resume RESUME       Path to checkpoint to resume training from
+                            (default: None)
+      --start_epoch START_EPOCH
+                            Epoch number to resume from (default: 0)
+
+    dataset arguments:
+
+      --nb_classes NB_CLASSES
+                            Number of output classes (default: 2)
+
+    runtime arguments:
+      --device DEVICE       Device: "cpu" or "cuda" (default: cuda)
+      --seed SEED           Random seed for reproducibility (default: 0)
+      --num_workers NUM_WORKERS
+                            Number of parallel data loading workers (default: 4)
+      --pin_mem             Pin CPU memory in DataLoader (default: True)
+      --no_pin_mem          Disable pinned memory
+      --log_dir LOG_DIR     Directory for TensorBoard logs (default:
+                            /niddk-data-central/log)
+      --dist_eval           Use distributed evaluation during training
+                            (default: False)
+
+    distributed training (advanced):
+      --world_size WORLD_SIZE
+                            Number of distributed processes (default: 1)
+      --local_rank LOCAL_RANK
+                            Local rank for distributed training (default: -1)
+      --dist_on_itp         Use ITP distributed backend (default: False)
+      --dist_url DIST_URL   URL for distributed training setup (default: env://)
 
 Training scripts with recommended settings are in `CHAP2/script/`:
 
@@ -319,8 +493,6 @@ bash script/iwatch_vit.sh         # Finetune ViT on iWatch
 ```
 
 > Edit the `.sh` files to change dataset paths and hyperparameters for your setup.
-
-For the full list of all parameters, run `python -m main_finetune --help`.
 
 
 Related Publications

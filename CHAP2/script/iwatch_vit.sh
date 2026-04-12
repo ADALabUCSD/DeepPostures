@@ -1,6 +1,5 @@
 # HIP TRANSFORMER MODEL
 torchrun --nproc_per_node=2 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/H" \
 --remark vit-base \
 --blr 1e-3 \
@@ -18,7 +17,6 @@ torchrun --nproc_per_node=2 -m main_finetune \
 --patch_emb 'sundial'
 
 torchrun --nproc_per_node=2 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/H" \
 --remark vit-small \
 --blr 1e-3 \
@@ -37,7 +35,6 @@ torchrun --nproc_per_node=2 -m main_finetune \
 
 
 torchrun --nproc_per_node=2 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/H" \
 --remark vit-tiny \
 --blr 1e-3 \
@@ -57,7 +54,6 @@ torchrun --nproc_per_node=2 -m main_finetune \
 
 # WRIST TRANSFORMER MODEL
 torchrun --nproc_per_node=2 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/W" \
 --remark vit-base \
 --blr 1e-3 \
@@ -76,7 +72,6 @@ torchrun --nproc_per_node=2 -m main_finetune \
 
 
 torchrun --nproc_per_node=2 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/W" \
 --remark vit-small \
 --blr 1e-3 \
@@ -94,7 +89,6 @@ torchrun --nproc_per_node=2 -m main_finetune \
 --patch_emb 'sundial' 
 
 torchrun --nproc_per_node=2 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/W" \
 --remark vit-tiny \
 --blr 1e-3 \

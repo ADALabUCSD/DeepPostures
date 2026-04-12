@@ -9,7 +9,6 @@ echo "Files:"
 ls -lah
 
 torchrun --nproc_per_node=4 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/W" \
 --remark CHAP-FT  \
 --blr 1e-3 \
@@ -24,7 +23,6 @@ torchrun --nproc_per_node=4 -m main_finetune \
 --use_data_aug 1 
 
 torchrun --nproc_per_node=4 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/iWatch/pre_processed_long_seg/H" \
 --remark CHAP-FT  \
 --blr 1e-3 \

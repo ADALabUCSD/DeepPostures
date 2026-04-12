@@ -32,7 +32,6 @@ python create_dataset_split.py --demo
 #   --eval         Path to a trained checkpoint (.pth) to load for inference
 #   --make_prediction      Enable prediction mode (no training)
 #   --prediction_dir       Where to save per-subject CSV predictions
-#   --ds_name      Dataset class name (iwatch uses the iWatch HDF5 loader)
 #   --batch_size   Samples per batch (reduce if OOM)
 #   --device       cpu or cuda (default: cuda)
 #   --num_workers  DataLoader workers (0 = main process only, good for debugging)
@@ -45,7 +44,6 @@ python create_dataset_split.py --demo
 #   SUBMIT_RESULT/iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth  (iWatch hip, zero-shot)
 
 python -m main_finetune \
-  --ds_name iwatch \
   --data_path "DEMO/demo_output" \
   --model CHAP \
   --eval "SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth" \

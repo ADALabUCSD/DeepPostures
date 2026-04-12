@@ -1,5 +1,4 @@
 torchrun --nproc_per_node=1 -m main_finetune \
---ds_name iwatch \
 --data_path "/niddk-data-central/SOL/PASOS/train/SOL_10hz" \
 --model CHAP \
 --eval "CHAP2/SUBMIT_RESULT/CHAP_FT_SOL/checkpoint-submit.pth" \

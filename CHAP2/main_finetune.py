@@ -145,7 +145,7 @@ def get_args_parser():
                         help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
     parser.add_argument('--no_pin_mem', action='store_false', dest='pin_mem')
     parser.set_defaults(pin_mem=True)
-    parser.add_argument('--ds_name', default='iwatch', type=str)
+
 
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
@@ -184,7 +184,7 @@ def main(args):
     np.random.seed(seed)
 
     cudnn.benchmark = False 
-    print('Using dataset',args.ds_name)
+    print('Using iWatch HDF5 dataloader')
     transform=None
     if args.use_data_aug:
         transform=data_aug
@@ -640,7 +640,6 @@ if __name__ == '__main__':
 # CHAP-FT
 
 torchrun --nproc_per_node=4 -m main_finetune_long \
---ds_name iwatch \
 --data_path "/niddk-data-central/SOL/PASOS/train/SOL_10hz" \
 --remark CHAP-FT  \
 --blr 1e-3 \
