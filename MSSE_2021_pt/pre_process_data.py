@@ -110,7 +110,7 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, wear_logs_dic
             return 0
 
     if ap_df is not None:
-        if False: #event_file: 
+        if args.event_file: #event_file: 
             ap_df['Time'] = ap_df['Time'].map(
                 lambda x: datetime.utcfromtimestamp(round((x - 25569.) * 86400 * 10) / 10.))
             event_start_times = ap_df['Time'].tolist()
