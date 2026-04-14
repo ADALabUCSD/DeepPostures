@@ -123,6 +123,7 @@ Complete usage details of this script are as follows:
       --silent              Whether to hide info messages
       --mp MP               Number of concurrent workers. Hint: set to the number of cores (default: None)
       --gzipped             Whether the raw data is gzipped or not. Hint: extension should be .csv.gz (default: False)
+      --event-file          Interpret ActivPAL CSVs as event-format files with Time and Interval (s) columns. Leave unset for 1-second epoch ActivPAL files such as SOL
 
 **Note:** If you use our pre-trained models for generating predictions, please keep the `--window-size` config unmodified, as this is what our models were trained on and cannot be changed. You can modify this if you train your own model (see instructions below, the corresponding config is `--cnn-window-size` ).
 
