@@ -124,7 +124,7 @@ def _flush_to_h5(f_out, x_list, y_list, ts_list, subj_list, first_write):
 
 
 if __name__ == "__main__":
-    import argparse, shutil, tempfile
+    import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--demo', action='store_true',
@@ -140,39 +140,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.demo:
-        # ── Demo: single subject, bundled sample data ────────────────
+        # Demo: single subject, bundled sample data.
         # Usage: python create_dataset_split.py --demo
-        #
-        # Input:  DEMO/CHAP1_preprocess_demo/2018-06-25.h5  (flat)
-        # But input_iterator expects <dir>/<subject_id>/<date>.h5,
-        # so we create a temp dir with the right layout.
+        # Input:  DEMO/CHAP1_preprocess_demo/demo_subject/2018-06-25.h5
         # Output: DEMO/demo_output/10s_{train,val,test_complete}.h5
         #   (uses 10s_* naming to match iWatch dataset class)
         base_dir = os.path.join(os.path.dirname(__file__), 'DEMO')
         src_dir = os.path.join(base_dir, 'CHAP1_preprocess_demo')
         demo_subject = 'demo_subject'
 
-        tmp_root = tempfile.mkdtemp(prefix='chap2_demo_')
-        subject_dir = os.path.join(tmp_root, demo_subject)
-        os.makedirs(subject_dir)
-        for fname in os.listdir(src_dir):
-            if fname.endswith('.h5'):
-                shutil.copy2(os.path.join(src_dir, fname), subject_dir)
-
         out_dir = os.path.join(base_dir, 'demo_output')
         os.makedirs(out_dir, exist_ok=True)
 
-        print(f"[DEMO] input: {src_dir}  ->  temp layout: {tmp_root}/{demo_subject}/")
+        print(f"[DEMO] input: {src_dir}/{demo_subject}/")
         print(f"[DEMO] output: {out_dir}")
 
         for split_name in ['train', 'val', 'test_complete']:
-            save_samples_from_iter(tmp_root,
+            save_samples_from_iter(src_dir,
                                    os.path.join(out_dir, f'10s_{split_name}.h5'),
                                    [demo_subject],
                                    window_size=args.window_size,
                                    flush_threshold=args.flush_threshold)
 
-        shutil.rmtree(tmp_root)
         print(f"[DEMO] Done! -> {out_dir}/10s_train.h5, {out_dir}/10s_val.h5, {out_dir}/10s_test_complete.h5")
 
     else:
