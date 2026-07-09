@@ -124,29 +124,33 @@ def _flush_to_h5(f_out, x_list, y_list, ts_list, subj_list, first_write):
 
 
 if __name__ == "__main__":
-    pre_processed_dir = '/niddk-data-central/SOL/PASOS/train/pre_processed_10hz'
+    import argparse
 
-    split_df = pd.read_csv('/niddk-data-central/SOL/PASOS/PASOS_support_files/train_val_split.csv')
-    train_subjects = split_df[split_df['split'] == 'train']['subject_id'].tolist()
-    val_subjects = split_df[split_df['split'] == 'validation']['subject_id'].tolist()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--pre-processed-dir', default='/niddk-data-central/SOL/PASOS/train/pre_processed_10hz')
+    ap.add_argument('--out-dir', default='/niddk-data-central/SOL/PASOS/train/SOL_10hz')
+    ap.add_argument('--split-csv', default=None,
+                    help='CSV with subject_id/split columns. Omit to process every subject dir into one file.')
+    ap.add_argument('--window-size', type=int, default=42)
+    ap.add_argument('--flush-threshold', type=int, default=1000)
+    args = ap.parse_args()
 
-    # write out one HDF5 per split, flattened along the time axis
-    save_samples_from_iter(pre_processed_dir,
-                           "/niddk-data-central/SOL/PASOS/train/SOL_10hz/10s_val.h5",
-                           val_subjects,
-                           window_size=42,
-                           flush_threshold=1000)
+    os.makedirs(args.out_dir, exist_ok=True)
 
-    save_samples_from_iter(pre_processed_dir,
-                           "/niddk-data-central/SOL/PASOS/train/SOL_10hz/10s_train.h5",
-                           train_subjects,
-                           window_size=42,
-                           flush_threshold=1000)
+    if args.split_csv:
+        split_df = pd.read_csv(args.split_csv)
+        splits = {name: g['subject_id'].tolist() for name, g in split_df.groupby('split')}
+    else:
+        # no split: every subdirectory is a subject, one output file
+        subjects = sorted(d for d in os.listdir(args.pre_processed_dir)
+                          if os.path.isdir(os.path.join(args.pre_processed_dir, d)))
+        splits = {'all': subjects}
 
-    # save_samples_from_iter(pre_processed_dir,
-    #                        "/niddk-data-central/iWatch/pre_processed_long_seg/W/10s_test.h5",
-    #                        test_subjects,
-    #                        window_size=42,
-    #                        flush_threshold=1000)
+    for name, subjects in splits.items():
+        save_samples_from_iter(args.pre_processed_dir,
+                               f"{args.out_dir}/10s_{name}.h5",
+                               subjects,
+                               window_size=args.window_size,
+                               flush_threshold=args.flush_threshold)
 
     print("Done!")
