@@ -1,0 +1,17 @@
+timm==1.0.7
+torch>=2.4
+torchvision
+matplotlib
+numpy==1.24.4
+wandb
+torchmetrics
+einops
+pandas
+h5py
+scikit-learn
+scipy
+seaborn
+tqdm
+transformers
+transforms3d
+omegaconf

@@ -145,8 +145,8 @@ if __name__ == "__main__":
 """
 Example:
 python CHAP2/pre_process/find_label_dist.py \
-  --data-path /niddk-data-central/iWatch/pre_processed_pt/W \
-  --split-path /niddk-data-central/iWatch/support_files/iwatch_split_dict.pkl \
+  --data-path /path/to/iWatch/pre_processed_pt/W \
+  --split-path /path/to/iwatch_split_dict.pkl \
   --bi-lstm-win-size 42 \
   --batch-size 32
 """

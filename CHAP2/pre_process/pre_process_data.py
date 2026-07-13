@@ -700,6 +700,10 @@ if __name__ == "__main__":
         '--non-wear-times-file', help='Path to non wear times file', required=False)
     optional_arguments.add_argument(
         '--activpal-dir', help='ActivPAL data directory',  default=None, required=False)
+    
+    optional_arguments.add_argument(
+        '--event-file', help='Interpret ActivPAL CSVs as event-format files with Time and Interval (s) columns. Leave unset for 1-second epoch ActivPAL files.', default=False, required=False, action='store_true')
+    
     optional_arguments.add_argument('--n-start-id', help='The index of the starting character of the ID in gt3x file names. Indexing starts with 1. \
                         If specified `n_end_ID` should also be specified. If both `n_start_ID` and `expression_after_ID` is \
                         specified, the latter will be ignored', type=int, required=False)
