@@ -31,6 +31,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     epoch: int, loss_scaler, max_norm: float = 1,
                     mixup_fn: Optional[Mixup] = None, log_writer=None, device = torch.device,
                     args=None):
+    """Run one training epoch and return averaged loss/lr/accuracy stats."""
     model.train(True)
     metric_logger = misc.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -134,6 +135,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 @torch.no_grad()
 def evaluate(args,data_loader, model, device):
+    """Evaluate a split and optionally collect window-level prediction records."""
     if args.nb_classes == 2:
         criterion = torch.nn.BCEWithLogitsLoss()
     else:
@@ -250,6 +252,7 @@ import os
 
 @torch.no_grad()
 def evaluate_cm(data_loader, model, device, as_img=False, save_dir='./'):
+    """Compute a confusion matrix and save misclassified samples for analysis."""
     criterion = torch.nn.CrossEntropyLoss()
     metric_logger = misc.MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -326,58 +329,3 @@ def evaluate_cm(data_loader, model, device, as_img=False, save_dir='./'):
         }, f)
 
     return cm, bal_acc
-
-# def evaluate_cm(data_loader, model, device,as_img=False):
-#     criterion = torch.nn.CrossEntropyLoss()
-#     metric_logger = misc.MetricLogger(delimiter="  ")
-#     header = 'Test:'
-
-#     model.eval()
-
-#     recall_metric = MulticlassRecall(2, average='weighted', zero_division=0).to(device)
-#     specificity_metric = MulticlassSpecificity(num_classes=2, average='weighted', zero_division=0).to(device)
-#     f1_metric = MulticlassF1Score(num_classes=2, average='weighted', zero_division=0).to(device)
-
-#     all_preds = []
-#     all_targets = []
-
-#     for samples, target in data_loader:
-#         samples = samples.float().to(device, non_blocking=True) # BS,42, 100, 3
-#         if as_img:
-#             samples = rearrange(samples, 'b w l c -> (b w) 1 c l')
-#             #samples = samples.unsqueeze(1)
-#         target = target.to(device, non_blocking=True)
-
-#         output = model(samples)
-#         output = output.view(-1, output.size(-1))  # (BS * 42, C)
-#         target = target.view(-1)
-
-#         loss = criterion(output, target)
-
-#         preds = output.argmax(dim=1)
-
-#         recall_metric.update(preds, target)
-#         specificity_metric.update(preds, target)
-#         f1_metric.update(preds, target)
-
-#         all_preds.extend(preds.cpu().numpy())
-#         all_targets.extend(target.cpu().numpy())
-
-#         acc1, _ = accuracy(output, target, topk=(1, 2))
-#         batch_size = samples.shape[0]
-#         metric_logger.update(loss=loss.item())
-#         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-
-#     metric_logger.synchronize_between_processes()
-#     recall_tm = recall_metric.compute().item()
-#     specificity_tm = specificity_metric.compute().item()
-#     bal_acc = 100 * (recall_tm + specificity_tm) / 2
-#     f1 = 100 * f1_metric.compute().item()
-
-#     print('* Acc@1 {top1.global_avg:.5f} bal_acc {bal_acc:.5f} f1 {f1:.5f} loss {losses.global_avg:.3f}'
-#           .format(top1=metric_logger.acc1, bal_acc=bal_acc, f1=f1, losses=metric_logger.loss))
-
-#     cm = confusion_matrix(all_targets, all_preds, labels=list(range(2)))
-    
-#     return cm,bal_acc
-

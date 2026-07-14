@@ -158,6 +158,93 @@ def get_args_parser():
     return parser    
 
 
+def _require_model_config(cfg, model_name):
+    if cfg is None:
+        raise ValueError(f"--config is required when using model {model_name}")
+    return cfg.model
+
+
+def build_model(args, cfg=None):
+    # CHAP replicate: CNN-BiLSTM initialized from CHAP1 weights when provided.
+    if args.model == 'CHAP':
+        model = CHAP(2, 42, 2)
+        if args.checkpoint:
+            msg = load_model_weights(model, args.checkpoint, weights_only=False)
+            print(msg)
+        else:
+            print("training CHAP from scratch")
+        return model
+
+    # Add attention on top of the full CNN-BiLSTM feature extractor.
+    if args.model == 'CNNBiLSTMAttentionModel':
+        model_cfg = _require_model_config(cfg, args.model)
+        base_model = CHAP(2, 42, 2)
+        if args.checkpoint:
+            msg = load_model_weights(base_model, args.checkpoint, weights_only=False)
+            print(msg)
+        else:
+            print("training CHAP from scratch")
+
+        base_model_hidden_dim = base_model.fc_bilstm.in_features  # 256
+        print("base_model_hidden_dim:", base_model_hidden_dim)
+        base_model = FeatureExtractorWrapper(base_model)
+        return CNNAttentionModel(
+            base_model=base_model,
+            base_model_hidden_dim=base_model_hidden_dim,
+            num_layer=model_cfg.num_layers,
+            hidden_dim=model_cfg.hidden_dim,
+            num_heads=model_cfg.num_heads,
+            ffn_multiplier=model_cfg.ffn_multiplier,
+            drop_path_rate=model_cfg.drop_path_rate,
+            learnable_pos_embed=model_cfg.learnable_pos_embed,
+        )
+
+    # Add attention on top of the CNN feature extractor only.
+    if args.model == 'CNNAttentionModel':
+        model_cfg = _require_model_config(cfg, args.model)
+        base_model = CHAP(2, 42, 2)
+        if model_cfg.transfer_learning_model_path:
+            msg = load_model_weights(
+                base_model, model_cfg.transfer_learning_model_path, weights_only=False
+            )
+            print(msg)
+
+        base_model = base_model.cnn_model
+        base_model_hidden_dim = base_model.fc.out_features  # 512
+        return CNNAttentionModel(
+            base_model=base_model,
+            base_model_hidden_dim=base_model_hidden_dim,
+            num_layer=model_cfg.num_layers,
+            hidden_dim=model_cfg.hidden_dim,
+            num_heads=model_cfg.num_heads,
+            ffn_multiplier=model_cfg.ffn_multiplier,
+            drop_path_rate=model_cfg.drop_path_rate,
+            learnable_pos_embed=model_cfg.learnable_pos_embed,
+        )
+
+    # ViT experiments. This path is currently incomplete in the merged CHAP2
+    # source: MaskedAutoencoderViT and ClassiferHeadWrapper are not included in
+    # this repo. To enable it, add the missing MAE implementation or refactor
+    # this branch to use models_vit.py with a wrapper that returns (B, 42, 1).
+    vit_configs = {
+        'vit-base': {'embed_dim': 768, 'depth': 12, 'num_heads': 12},
+        'vit-small': {'embed_dim': 384, 'depth': 12, 'num_heads': 6},
+        'vit-tiny': {'embed_dim': 192, 'depth': 12, 'num_heads': 3},
+    }
+    if args.model in vit_configs:
+        base_model = MaskedAutoencoderViT(
+            img_size=[3, args.input_size],
+            patch_size=[args.patch_nvar, args.patch_size],
+            patch_emb=args.patch_emb,
+            use_rope=args.use_rope,
+            learnable_pos_embed=args.learnable_pos_embed,
+            **vit_configs[args.model],
+        )
+        return ClassiferHeadWrapper(base_model, num_classes=args.nb_classes)
+
+    raise ValueError(f"Unsupported model: {args.model}")
+
+
 
 def main(args):
     args_dict = vars(args)
@@ -166,6 +253,7 @@ def main(args):
         cfg_dict = OmegaConf.to_container(cfg, resolve=True)
         flat_cfg = misc.flatten_config_dict(cfg_dict)  # flatten the config dict
     else:
+        cfg = None
         flat_cfg = {}
 
     combined_config = {**args_dict, **flat_cfg}
@@ -205,13 +293,15 @@ def main(args):
 
     print(f"using {args.subset_ratio} of train dataset, {len(dataset_train)} samples")
 
-    if True:  # args.distributed:
+    global_rank = misc.get_rank()
+    if args.distributed:
         num_tasks = misc.get_world_size()
-        global_rank = misc.get_rank()
         sampler_train = torch.utils.data.DistributedSampler(
             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
         )
-        print("Sampler_train = %s" % str(sampler_train))
+    else:
+        sampler_train = torch.utils.data.RandomSampler(dataset_train)
+    print("Sampler_train = %s" % str(sampler_train))
     
     data_loader_train = torch.utils.data.DataLoader(
         dataset_train, sampler=sampler_train,
@@ -249,98 +339,7 @@ def main(args):
     else:
         log_writer = None
 
-    # TODO: package below into a model factory function
-    # CHAP replicate #######
-    if args.model == 'CHAP':
-        model = CHAP(2,42,2)
-
-        if args.checkpoint:
-            msg = load_model_weights(model, args.checkpoint, weights_only=False)
-        else:
-            print("training CHAP from scratch")
-        
-    
-    elif args.model == 'CNNBiLSTMAttentionModel':
-        # add attention on top of CNNBiLSTM
-        base_model = CHAP(2,42,2)
-
-        if args.checkpoint:
-            msg = load_model_weights(model, args.checkpoint, weights_only=False)
-        else:
-            print("training CHAP from scratch")
-
-
-        base_model_hidden_dim = base_model.fc_bilstm.in_features # 256
-        print("base_model_hidden_dim:", base_model_hidden_dim)
-        base_model = FeatureExtractorWrapper(base_model)
-        model = CNNAttentionModel(base_model=base_model,
-                                          base_model_hidden_dim=base_model_hidden_dim,
-                                          num_layer=cfg.model.num_layers,
-                                          hidden_dim=cfg.model.hidden_dim,
-                                          num_heads=cfg.model.num_heads,
-                                          ffn_multiplier=cfg.model.ffn_multiplier,
-                                          drop_path_rate=cfg.model.drop_path_rate,
-                                          learnable_pos_embed=cfg.model.learnable_pos_embed,)
-
-    elif args.model == 'CNNAttentionModel':
-        base_model = CHAP(2,42,2)
-        if cfg.model.transfer_learning_model_path:
-            msg = load_model_weights(base_model, cfg.model.transfer_learning_model_path, weights_only=False)
-            print(msg)
-        
-        # we only need the CNN extractor
-        base_model = base_model.cnn_model
-
-        base_model_hidden_dim = base_model.fc.out_features # 512
-        model = CNNAttentionModel(base_model=base_model,
-                                          base_model_hidden_dim=base_model_hidden_dim,
-                                          num_layer=cfg.model.num_layers,
-                                          hidden_dim=cfg.model.hidden_dim,
-                                          num_heads=cfg.model.num_heads,
-                                          ffn_multiplier=cfg.model.ffn_multiplier,
-                                          drop_path_rate=cfg.model.drop_path_rate,
-                                          learnable_pos_embed=cfg.model.learnable_pos_embed,)
-                                    
-        
-    #######################
-    elif args.model == 'vit-base':
-        base_model = MaskedAutoencoderViT(img_size=[3,args.input_size],
-                                patch_size=[args.patch_nvar,args.patch_size],
-                                patch_emb=args.patch_emb,
-                                use_rope = args.use_rope,
-                                learnable_pos_embed=args.learnable_pos_embed,
-                                embed_dim=768,
-                                depth=12,
-                                num_heads=12)
-        
-        # TODO: No weight to load right now.
-        model = ClassiferHeadWrapper(base_model, num_classes=args.nb_classes)
-
-    elif args.model == 'vit-small':
-        base_model = MaskedAutoencoderViT(img_size=[3,args.input_size],
-                                patch_size=[args.patch_nvar,args.patch_size],
-                                patch_emb=args.patch_emb,
-                                use_rope = args.use_rope,
-                                learnable_pos_embed=args.learnable_pos_embed,
-                                embed_dim=384,
-                                depth=12,
-                                num_heads=6)
-        
-        # TODO: No weight to load right now.
-        model = ClassiferHeadWrapper(base_model, num_classes=args.nb_classes)
-
-    elif args.model == 'vit-tiny':
-        base_model = MaskedAutoencoderViT(img_size=[3,args.input_size],
-                                patch_size=[args.patch_nvar,args.patch_size],
-                                patch_emb=args.patch_emb,
-                                use_rope = args.use_rope,
-                                learnable_pos_embed=args.learnable_pos_embed,
-                                embed_dim=192,
-                                depth=12,
-                                num_heads=3)
-        
-        # TODO: No weight to load right now.
-        model = ClassiferHeadWrapper(base_model, num_classes=args.nb_classes)
+    model = build_model(args, cfg)
 
 
     if args.eval:
