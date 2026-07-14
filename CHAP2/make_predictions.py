@@ -72,8 +72,7 @@ def build_model(args):
         return CHAP(2, args.window_size, 2)
     raise ValueError(
         f"Unsupported --model {args.model!r}. This script currently supports "
-        "'CHAP' (the architecture used by all SUBMIT_RESULT checkpoints). "
-        "For ViT inference, use main_finetune.py --eval ... --make_prediction."
+        "'CHAP' (the architecture used by all SUBMIT_RESULT checkpoints)."
     )
 
 

@@ -61,14 +61,10 @@ def get_args_parser():
                         help='Directory to save prediction files') 
 
     # Model parameters
-    parser.add_argument('--model', default='vit_base_patch16', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='CHAP', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--input_size', type=int, default=4200, 
                         help='Input size "')
-    parser.add_argument('--patch_size', type=int, default=100, 
-                        help='Patch size')
-    parser.add_argument('--patch_nvar', type=int, default=1, 
-                    help='Patch size')
     parser.add_argument('--use_pos_embed', action='store_true', default=False,)
     parser.add_argument('--no_use_pos_embed', action='store_false', dest='use_pos_embed',)
 
@@ -79,10 +75,6 @@ def get_args_parser():
     parser.add_argument('--use_data_aug',default=1,type=int)
     parser.add_argument('--drop_path_rate', type=float, default=0.1,
                         help='Drop path rate')
-    parser.add_argument('--patch_emb', type=str, default='vit', #sundial
-                        help='Patch embedding type')
-    parser.add_argument('--use_rope', action='store_true',
-                        help='Use rotary position embedding')
     # Optimizer parameters
     parser.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
                         help='Clip gradient norm (default: None, no clipping)')
@@ -98,11 +90,6 @@ def get_args_parser():
                         help='layer-wise lr decay from ELECTRA/BEiT')
     parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0')
-    parser.add_argument('--learnable_pos_embed', action='store_true', default=False,
-                        help='use learnable position embedding (default: False)')
-    parser.add_argument('--no_learnable_pos_embed', action='store_false', dest='learnable_pos_embed',
-                        help='disable learnable position embedding')
-
     parser.add_argument('--warmup_epochs', type=int, default=2, metavar='N',
                         help='epochs to warmup LR')
     parser.add_argument('--pos_weight', type=float, default=1.0, 
@@ -221,26 +208,6 @@ def build_model(args, cfg=None):
             drop_path_rate=model_cfg.drop_path_rate,
             learnable_pos_embed=model_cfg.learnable_pos_embed,
         )
-
-    # ViT experiments. This path is currently incomplete in the merged CHAP2
-    # source: MaskedAutoencoderViT and ClassiferHeadWrapper are not included in
-    # this repo. To enable it, add the missing MAE implementation or refactor
-    # this branch to use models_vit.py with a wrapper that returns (B, 42, 1).
-    vit_configs = {
-        'vit-base': {'embed_dim': 768, 'depth': 12, 'num_heads': 12},
-        'vit-small': {'embed_dim': 384, 'depth': 12, 'num_heads': 6},
-        'vit-tiny': {'embed_dim': 192, 'depth': 12, 'num_heads': 3},
-    }
-    if args.model in vit_configs:
-        base_model = MaskedAutoencoderViT(
-            img_size=[3, args.input_size],
-            patch_size=[args.patch_nvar, args.patch_size],
-            patch_emb=args.patch_emb,
-            use_rope=args.use_rope,
-            learnable_pos_embed=args.learnable_pos_embed,
-            **vit_configs[args.model],
-        )
-        return ClassiferHeadWrapper(base_model, num_classes=args.nb_classes)
 
     raise ValueError(f"Unsupported model: {args.model}")
 

@@ -4,7 +4,6 @@ Example: How to instantiate each model, load weights, and run inference.
 Models:
   - CHAP-FT  (CHAP 2.0): Finetuned CNN-BiLSTM
   - CHAP-ZS:              Zero-shot CNN-BiLSTM with attention
-  - CHAP-ViT:             Vision Transformer (requires external models_mae.py)
 
 Data format:
   All models expect accelerometer data at 10Hz with 3 channels (x, y, z).
@@ -124,55 +123,6 @@ def example_chap_zs():
 
 
 # ============================================================================
-# 3. CHAP-ViT — Vision Transformer
-#    Uses models_vit.py (VisionTransformer built on timm).
-#    No submitted weights are available — this example creates the model only.
-# ============================================================================
-
-def example_chap_vit():
-    from models_vit import vit_base_patch16, vit_tiny_patch16
-
-    # ViT-base configuration
-    #   img_size:   (num_channels, sequence_length) — treated as a 2D "image"
-    #   patch_size: how the input is divided into patches
-    #   in_chans:   1 (each window is a single-channel 2D input)
-    #   num_classes: 2 (binary classification)
-    #
-    # Available factory functions:
-    #   vit_base_patch16:  embed_dim=768, depth=12, num_heads=12
-    #   vit_tiny_patch16:  embed_dim=768, depth=12, num_heads=3
-    #   vit_large_patch16: embed_dim=1024, depth=24, num_heads=16
-    #   vit_huge_patch14:  embed_dim=1280, depth=32, num_heads=16
-
-    model = vit_base_patch16(
-        img_size=(100, 3),     # each window: 100 timesteps × 3 axes
-        patch_size=(5, 3),     # patch covers 5 timesteps × all 3 axes
-        in_chans=1,            # single-channel input
-        num_classes=2,         # binary classification
-        use_cls=True,          # use CLS token for classification
-    )
-    model.eval()
-
-    # --- Input format ---
-    # VisionTransformer expects: (batch_size, in_chans, H, W) = (batch_size, 1, 100, 3)
-    # For a sequence of 42 windows, flatten batch and window dimensions:
-    batch_size = 4
-    num_windows = 42
-    x = torch.randn(batch_size, num_windows, 100, 3)  # raw accelerometer
-    x_flat = x.view(-1, 1, 100, 3)                     # (168, 1, 100, 3)
-
-    with torch.no_grad():
-        logits = model(x_flat)                          # (168, 2) — per-window class logits
-        logits = logits.view(batch_size, num_windows, -1)  # (4, 42, 2)
-        preds = logits.argmax(dim=-1)                   # (4, 42)
-
-    print(f"[CHAP-ViT] Input: {x.shape} -> flattened: {x_flat.shape}")
-    print(f"[CHAP-ViT] Output logits: {logits.shape}, preds: {preds.shape}")
-    print(f"[CHAP-ViT] Sample predictions: {preds[0][:10]}")
-    return model
-
-
-# ============================================================================
 # Run all examples
 # ============================================================================
 
@@ -187,9 +137,3 @@ if __name__ == "__main__":
     print("CHAP-ZS — Zero-shot CNN-BiLSTM + Attention")
     print("=" * 60)
     example_chap_zs()
-
-    print()
-    print("=" * 60)
-    print("CHAP-ViT — Vision Transformer (vit-base)")
-    print("=" * 60)
-    example_chap_vit()
