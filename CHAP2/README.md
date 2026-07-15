@@ -99,6 +99,7 @@ Common optional arguments include:
 --activpal-dir
 --event-file
 --loc {hip,wrist}
+--window-size
 --gt3x-frequency
 --down-sample-frequency
 ```
@@ -116,12 +117,21 @@ Argument summary:
 | `--activpal-dir` | no | `None` | Directory containing ActivPAL label files. |
 | `--event-file` | no | `False` | Treat ActivPAL files as event-format files. |
 | `--loc` | no | `None` | iWatch location, either `hip` or `wrist`. |
+| `--n-start-id` | no | `None` | Starting character index for extracting subject IDs from filenames. |
+| `--n-end-id` | no | `None` | Ending character index for extracting subject IDs from filenames. |
+| `--expression-after-id` | no | `None` | Split expression used to extract subject IDs from filenames. |
+| `--window-size` | no | `10` | Window size in seconds for daily HDF5 windows. |
 | `--gt3x-frequency` | no | `30` | Raw accelerometer sampling frequency in Hz. |
 | `--down-sample-frequency` | no | `10` | Output sampling frequency in Hz. |
+| `--activpal-label-map` | no | `{"0": 0, "1": 1, "2": 1}` | Mapping from ActivPAL labels to CHAP binary labels. |
+| `--silent` | no | `False` | Hide informational messages. |
 | `--mp` | no | `None` | Number of multiprocessing workers. |
+| `--gzipped` | no | `False` | Read gzipped raw CSV files. |
 
-For CHAP fine-tuning and inference, unlabeled windows (`label == -1`) should be
-excluded from labeled evaluation/training data.
+For CHAP fine-tuning and labeled evaluation, unlabeled windows (`label == -1`)
+should be excluded. `create_dataset_split.py` drops these windows for training
+splits; `make_predictions.py` can still generate prediction-only outputs when
+labels are unavailable.
 
 ## Creating Train/Validation/Test Splits
 
@@ -236,7 +246,7 @@ Argument summary:
 | `--model` | no | `CHAP` | Model architecture. Official CHAP2.0 uses `CHAP`. |
 | `--checkpoint` | no | `None` | Checkpoint used to initialize/fine-tune the model. |
 | `--output_dir` | no | `./output` | Directory for training checkpoints and outputs. |
-| `--log_dir` | no | `./logs` | Directory for experiment logs. |
+| `--log_dir` | no | `None` | Directory for W&B logs; unset disables W&B logging. |
 | `--remark` | no | `Debug` | Experiment name. |
 | `--epochs` | no | `20` | Number of training epochs. |
 | `--batch_size` | no | `64` | Batch size per process/GPU. |

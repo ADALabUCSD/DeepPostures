@@ -112,8 +112,8 @@ def get_args_parser():
 
     parser.add_argument('--output_dir', default='./output',
                         help='path where to save checkpoints, empty for no saving')
-    parser.add_argument('--log_dir', default='./logs',
-                        help='path where to tensorboard log')
+    parser.add_argument('--log_dir', default=None,
+                        help='path where to save W&B logs; unset to disable W&B logging')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
     parser.add_argument('--seed', default=0, type=int)
@@ -296,7 +296,6 @@ def main(args):
         shuffle=False,  )
 
     if args.log_dir is not None and not args.eval and global_rank == 0:  
-        wandb.login(key=WANDB_KEY)
         log_writer = wandb.init(
             project='CHAP_FT',  # Specify your project
             config= combined_config,
@@ -589,11 +588,13 @@ if __name__ == '__main__':
     args.remark = args.remark + f'set_{args.subset_ratio}_blr_{args.blr}_bs_{args.batch_size}_input_size_{args.input_size}'
     print(f'Start Training: {args.remark}')
     
-    args.log_dir = os.path.join(args.log_dir,args.remark,f'{initial_timestamp.strftime("%Y-%m-%d_%H-%M")}')
+    if args.log_dir is not None:
+        args.log_dir = os.path.join(args.log_dir,args.remark,f'{initial_timestamp.strftime("%Y-%m-%d_%H-%M")}')
     args.output_dir = os.path.join(args.output_dir,args.remark,f'{initial_timestamp.strftime("%Y-%m-%d_%H-%M")}')
     if args.output_dir and not args.eval:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-        Path(args.log_dir).mkdir(parents=True, exist_ok=True)
+        if args.log_dir is not None:
+            Path(args.log_dir).mkdir(parents=True, exist_ok=True)
 
     main(args)
 
