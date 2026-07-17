@@ -1,8 +1,9 @@
 ---
 layout: default
-title: 1. Dependencies
+title: 0. Dependencies
 parent: Getting Started
-nav_order: 1
+grand_parent: MSSE-2021
+nav_order: 0
 ---
 
 # Dependencies
@@ -36,5 +37,3 @@ If the above doesn't work, you can do it manually.
 ```bash
     cd MSSE-2021
 ```
-
-

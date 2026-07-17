@@ -407,6 +407,8 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                                 sleep_logs_file, formats, line
                             )
                         )
+
+                    sleep_logs_dict[id].append((start_time, end_time))
             else:
                 raise Exception(
                         'sleep_logs_file should have three/five header columns. Found: {}'.format(header))

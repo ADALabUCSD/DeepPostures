@@ -2,6 +2,7 @@
 layout: default
 title: 0. Training Your Own Model
 parent: Advanced Usages
+grand_parent: MSSE-2021
 nav_order: 1
 ---
 

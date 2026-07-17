@@ -1,7 +1,9 @@
 ---
 layout: default
-title: 3. Generating Predictions
+title: 2. Generating Predictions
 parent: Getting Started
+grand_parent: MSSE-2021
+nav_order: 2
 ---
 
 # Generating Predictions from Pre-Trained Models

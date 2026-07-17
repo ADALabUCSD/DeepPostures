@@ -294,6 +294,5 @@ The demo reads `DEMO/CHAP1_preprocess_demo/` and writes prediction CSV files to
 
 - CHAP2.0 is kept as a directory parallel to `MSSE-2021/`.
 - The official CHAP2.0 public merge focuses on CHAP-ZS and CHAP-FT.
-- ViT/MoCA experimental code is maintained separately and is not included here.
 - Detailed tutorials and website documentation should be used for end-to-end
   examples and dataset-specific guidance.

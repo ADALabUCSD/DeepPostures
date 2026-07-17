@@ -2,6 +2,7 @@
 layout: default
 title: 3. Data Compression
 parent: Advanced Usages
+grand_parent: MSSE-2021
 nav_order: 4
 ---
 

@@ -2,6 +2,7 @@
 layout: default
 title: 4. Edge Cases and Padding Schemes Study
 parent: Advanced Usages
+grand_parent: MSSE-2021
 nav_order: 5
 ---
 # Edge Cases and Padding Schemes Study

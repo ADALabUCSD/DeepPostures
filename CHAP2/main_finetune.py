@@ -597,29 +597,3 @@ if __name__ == '__main__':
             Path(args.log_dir).mkdir(parents=True, exist_ok=True)
 
     main(args)
-
-
-
-'''
- 
-## SOL ########################################
-
-# CHAP-FT
-
-torchrun --nproc_per_node=4 -m main_finetune_long \
---data_path "/niddk-data-central/SOL/PASOS/train/SOL_10hz" \
---remark CHAP-FT  \
---blr 1e-3 \
---model CHAP \
---checkpoint "MSSE_2021_pt/pre-trained-models-pt/CHAP_ALL_ADULTS.pth" \
---epochs 10 \
---warmup_epochs 2 \
---batch_size 16 \
---weight_decay 1e-3 \
---subset_ratio 1.0 \
---pos_weight 1.0 \
---use_data_aug 1 
-
-
-
-'''

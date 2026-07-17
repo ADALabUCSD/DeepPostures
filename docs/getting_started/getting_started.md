@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Getting Started
-nav_order: 1
+parent: MSSE-2021
+nav_order: 0
 has_children: true
 permalink: getting_started
 ---

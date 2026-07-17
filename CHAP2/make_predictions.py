@@ -1,7 +1,7 @@
 """
-Generate per-subject prediction CSVs from CHAP1-preprocessed data.
+Generate per-subject prediction CSVs from CHAP-preprocessed daily HDF5 data.
 
-Reads CHAP1 output directly:
+Reads daily HDF5 output directly:
     <data_dir>/<subject_id>/<YYYY-MM-DD>.h5
 
 Each daily .h5 has keys:
@@ -20,8 +20,7 @@ The `label` column is included only if the input has any labeled windows;
 otherwise prediction-only output is written.
 
 This script does NOT require running create_dataset_split.py first, and does
-NOT need train/validation splits. It is the wrist-model counterpart to
-CHAP1's make_predictions.py.
+NOT need train/validation splits.
 """
 
 import argparse
@@ -122,9 +121,9 @@ def discover_subjects(data_dir, explicit):
 
 def get_args_parser():
     p = argparse.ArgumentParser('make_predictions',
-        description='Run a CHAP wrist/hip checkpoint on CHAP1-preprocessed data.')
+        description='Run a CHAP wrist/hip checkpoint on CHAP-preprocessed daily HDF5 data.')
     p.add_argument('--data_dir', required=True,
-                   help='CHAP1-preprocessed dir: <data_dir>/<subject_id>/<YYYY-MM-DD>.h5')
+                   help='CHAP-preprocessed daily HDF5 dir: <data_dir>/<subject_id>/<YYYY-MM-DD>.h5')
     p.add_argument('--checkpoint', required=True, help='Path to model .pth')
     p.add_argument('--prediction_dir', required=True,
                    help='Output dir for per-subject CSVs')
