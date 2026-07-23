@@ -1,7 +1,7 @@
 CHAP 2.0 — Wrist & Hip Accelerometer Posture Classification
 ============================================================
 
-This repository takes **accelerometer data** (from an ActiGraph or Apple Watch)
+This repository takes **accelerometer data** (from an ActiGraph)
 and labels every 10 seconds as **sitting** or **not sitting**. It ships every
 model from the paper, each usable on both hip and wrist data (including
 SOL/PASOS):
@@ -155,12 +155,20 @@ python -m make_predictions \
 **Which `--checkpoint`?** Pick the one that matches your device and wear
 location:
 
-| Checkpoint | Best for |
-|-----------|----------|
-| `SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth` | ActiGraph **wrist** data (SOL/PASOS-tuned) |
-| `SUBMIT_RESULT/iWatch_W/CHAP-FT/checkpoint/checkpoint-submit.pth` | Apple Watch **wrist** data |
-| `SUBMIT_RESULT/iWatch_H/CHAP-FT/checkpoint/checkpoint-submit.pth` | Hip data |
-| `SUBMIT_RESULT/iWatch_{W,H}/CHAP-ZS/checkpoint/checkpoint-submit.pth` | Zero-shot (no finetuning) baselines |
+**Recommended** — start here:
+
+| Checkpoint | Notes |
+|-----------|-------|
+| `SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth` | wrist — SOL/PASOS-tuned |
+| `SUBMIT_RESULT/iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | hip — ACT and AusDiab trained |
+
+Other alternatives:
+
+| Checkpoint | Notes |
+|-----------|-------|
+| `SUBMIT_RESULT/iWatch_W/CHAP-FT/checkpoint/checkpoint-submit.pth` | wrist — iWatch-finetuned |
+| `SUBMIT_RESULT/iWatch_H/CHAP-FT/checkpoint/checkpoint-submit.pth` | hip — iWatch-finetuned |
+| `SUBMIT_RESULT/iWatch_W/CHAP-ZS/checkpoint/checkpoint-submit.pth` | wrist — zero-shot (no finetuning) baseline |
 
 **Output.** One CSV per subject lands in `--prediction_dir`, with columns
 `segment, timestamp, prediction` (where `prediction` is `0` = sitting,
