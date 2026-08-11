@@ -9,7 +9,7 @@ nav_order: 2
 # Generating Predictions from Pre-Trained Models
 {: .no_toc }
 
-You can use the released [pre-trained models]({{ site.baseurl }}{% link datasets_and_models.md %}#Pre-trained Models) to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
+You can use the released [pre-trained models]({{ site.baseurl }}{% link datasets_and_models.md %}#msse-2021-pre-trained-models) to generate predictions using your own data. To do so invoke the `make_predictions.py` as follows:
     
     python make_predictions.py --pre-processed-dir <pre_processed_data_dir>
 

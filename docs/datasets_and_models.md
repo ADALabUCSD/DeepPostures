@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Datasets and Models
-nav_order: 4
+parent: MSSE-2021
+nav_order: 2
 ---
 
 # Datasets and Models
@@ -126,25 +127,3 @@ Below are some additional pre-trained models described in the previous paper.
 |CHAP_B                                               | ACT                 |
 |CHAP_C                                               | ACT                 |
 |CHAP (ensemble of A, B, and C)                       | ACT                 |
-
-### CHAP2.0 Submitted Checkpoints
-
-CHAP2.0 submitted checkpoints are stored under `CHAP2/SUBMIT_RESULT/` and can
-be used with the CHAP2.0
-[prediction workflow]({{ site.baseurl }}{% link chap2/prediction.md %}).
-
-CHAP-ZS means zero-shot prediction: the CHAP/MSSE-2021 pre-trained checkpoint
-is applied directly to the target dataset without fine-tuning. Separate CHAP-ZS
-folders correspond to different target datasets or sensor locations, not to
-separately trained zero-shot models.
-
-CHAP-FT checkpoints are initialized from CHAP/MSSE-2021 weights and then
-fine-tuned on the target dataset.
-
-| Checkpoint | Type | Target data | Notes |
-|------------|------|-------------|-------|
-| `SOL_W/CHAP_FT/checkpoint-submit.pth` | CHAP-FT | SOL/PASOS wrist | Fine-tuned on SOL/PASOS wrist data. |
-| `iWatch_W/CHAP-FT/checkpoint/checkpoint-submit.pth` | CHAP-FT | iWatch wrist | Fine-tuned on iWatch wrist data. |
-| `iWatch_W/CHAP-ZS/checkpoint/checkpoint-submit.pth` | CHAP-ZS | iWatch wrist | Zero-shot application of CHAP/MSSE-2021 pre-trained weights. |
-| `iWatch_H/CHAP-FT/checkpoint/checkpoint-submit.pth` | CHAP-FT | iWatch hip | Fine-tuned on iWatch hip data. |
-| `iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | CHAP-ZS | iWatch hip | Zero-shot application of CHAP/MSSE-2021 pre-trained weights. |

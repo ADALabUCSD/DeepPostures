@@ -116,8 +116,8 @@ CHAP-ZS folders correspond to different target datasets or sensor locations,
 not to separately trained zero-shot models.
 
 CHAP-FT checkpoints are fine-tuned from CHAP/MSSE-2021 weights on the target
-dataset. See [Datasets and Models]({{ site.baseurl }}{% link datasets_and_models.md %})
-for more details on the submitted checkpoints.
+dataset. See [Datasets and Models]({{ site.baseurl }}{% link chap2/datasets_and_models.md %})
+for more details on the submitted checkpoints and recommended defaults.
 
 If you want to fine-tune a checkpoint on your own labeled dataset, see
 [Fine-Tuning Your Own Model]({{ site.baseurl }}{% link chap2/finetuning.md %}).

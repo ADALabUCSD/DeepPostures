@@ -270,13 +270,21 @@ Argument summary:
 
 The submitted CHAP checkpoints are stored under `SUBMIT_RESULT/`:
 
+Recommended defaults:
+
+| Checkpoint | Recommended for |
+|------------|-----------------|
+| `SOL_W/CHAP_FT/checkpoint-submit.pth` | ActiGraph wrist data. |
+| `iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | ActiGraph hip data trained on ACT and AusDiab. |
+
+Additional submitted checkpoints are retained for reproducibility and
+comparison:
+
 | Checkpoint | Description |
 |------------|-------------|
-| `SOL_W/CHAP_FT/checkpoint-submit.pth` | SOL/PASOS wrist CHAP-FT checkpoint. |
 | `iWatch_W/CHAP-FT/checkpoint/checkpoint-submit.pth` | iWatch wrist CHAP-FT checkpoint. |
 | `iWatch_W/CHAP-ZS/checkpoint/checkpoint-submit.pth` | iWatch wrist CHAP-ZS checkpoint. |
 | `iWatch_H/CHAP-FT/checkpoint/checkpoint-submit.pth` | iWatch hip CHAP-FT checkpoint. |
-| `iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | iWatch hip CHAP-ZS checkpoint. |
 
 ## Demo
 
