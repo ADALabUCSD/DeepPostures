@@ -2,7 +2,7 @@
 layout: default
 title: Datasets and Models
 parent: MSSE-2021
-nav_order: 2
+nav_order: 1
 ---
 
 # Datasets and Models
