@@ -12,11 +12,19 @@ permalink: /
 DeepPostures is a library containing deep learning methods for identifying human postures from hip-worn accelerometer data.
 {: .fs-6 .fw-300 }
 
-[Get started now]({{ site.baseurl }}{% link getting_started/getting_started.md %}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Watch Demos]({{ site.baseurl }}{% link demo.md %}){: .btn .fs-5 .mb-4 .mb-md-0 } [View it on GitHub](https://github.com/ADALabUCSD/DeepPostures){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Download the library]({{ site.baseurl }}{% link getting_started/get_lib.md %}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Watch Demos]({{ site.baseurl }}{% link demo.md %}){: .btn .fs-5 .mb-4 .mb-md-0 } [View it on GitHub](https://github.com/ADALabUCSD/DeepPostures){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
-📌 DeepPostures project is migrated to PyTorch. See the updated usage steps at [Getting Started]({{ site.baseurl }}{% link getting_started/getting_started.md %}).
+📌 DeepPostures has migrated to PyTorch. The repository currently includes two
+code paths:
+
+- [MSSE-2021]({{ site.baseurl }}{% link msse_2021.md %}): the original CHAP
+  PyTorch implementation for posture prediction from hip-worn accelerometer
+  data.
+- [CHAP2.0]({{ site.baseurl }}{% link chap2/chap2.md %}): CHAP zero-shot
+  prediction and fine-tuning workflows for wrist and hip accelerometer data,
+  including iWatch and SOL/PASOS workflows.
 
 ## About 
 <img src="Illustration.jpeg" width="700">

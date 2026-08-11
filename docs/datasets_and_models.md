@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Datasets and Models
-nav_order: 3
+parent: MSSE-2021
+nav_order: 1
 ---
 
 # Datasets and Models
@@ -106,7 +107,9 @@ Data for the CHAP-CHILD model came from  the Patterns of Habitual Activity acros
     42633.4305601852,12134,1,2,5,1.111111E-03,297
     ~~~
 
-## Pre-trained Models
+## Models and Checkpoints
+
+### MSSE-2021 Pre-trained Models
 
 We currently support several [pre-trained models](https://github.com/ADALabUCSD/DeepPostures/tree/master/MSSE-2021/pre-trained-models) that can be used to generate predictions. The detailed description of these model architectures can be found in our [paper](https://doi.org/10.1249/MSS.0000000000002705). They have been trained on different training datasets, which have different demographics. The recommended and default model is the `CHAP_ALL_ADULTS` model. However, users can change the pre-trained model to better match their needs using the `--model` option. Below we provide a summary of the available pre-trained models and the characteristics of the datasets that they were trained on.
 
@@ -124,4 +127,3 @@ Below are some additional pre-trained models described in the previous paper.
 |CHAP_B                                               | ACT                 |
 |CHAP_C                                               | ACT                 |
 |CHAP (ensemble of A, B, and C)                       | ACT                 |
-

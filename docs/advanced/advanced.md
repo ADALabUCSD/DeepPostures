@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Advanced Usages
-nav_order: 4
+parent: MSSE-2021
+nav_order: 2
 has_children: true
 permalink: advanced
 ---
@@ -9,4 +10,3 @@ permalink: advanced
 # Advanced Usages
 
 These guides are intended or users who have more advanced usages of the library.
-

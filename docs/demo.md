@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Demos and Videos
-nav_order: 2
+nav_order: 5
 ---
 
 # Demos and Videos

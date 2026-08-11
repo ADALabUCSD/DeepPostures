@@ -2,6 +2,7 @@
 layout: default
 title: 2. Parallel Processing
 parent: Advanced Usages
+grand_parent: MSSE-2021
 nav_order: 3
 ---
 

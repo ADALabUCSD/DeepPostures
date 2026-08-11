@@ -1,7 +1,9 @@
 ---
 layout: default
-title: 2. Data Preprocessing
+title: 1. Data Preprocessing
 parent: Getting Started
+grand_parent: MSSE-2021
+nav_order: 1
 ---
 
 # Data Preprocessing

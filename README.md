@@ -2,11 +2,12 @@ DeepPostures
 ============
 **New** Check out our website at [url](https://adalabucsd.github.io/DeepPostures/) for tutorials, demos, and many more! 
 
-This repository contains the code artifacts released as part of the following publications:
+This repository contains code artifacts for CHAP posture classification work:
 
-- /MSSE-2021 : **The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults**
+- `MSSE-2021/`: **CHAP1.0 PyTorch implementation for hip accelerometer sitting pattern classification**, released with *The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults*.
+- `CHAP2/`: **CHAP2.0 PyTorch code for CHAP zero-shot prediction and fine-tuning on wrist/hip accelerometer data**, including iWatch and SOL/PASOS workflows.
 
-**We strongly suggest the user start with our website and use the MSSE-2021 folder as it contains the latest iteration of our research.**
+**We strongly suggest starting with our website and then using the folder that matches your workflow.** Use `MSSE-2021/` for the original CHAP pipeline and `CHAP2/` for CHAP zero-shot/fine-tuning workflows.
 
 > The current codebase has been migrated to PyTorch. To access the previous TensorFlow implementation switch to `tensorflow` branch. The tensorflow branch contains implementation for both `/JMPB-2021` and `/MSSE-2021` 
 
@@ -30,11 +31,13 @@ Alternatively, you can use conda to install Python 3 and use `pip` to install th
     pip install scikit-learn==1.5.2
     pip install tqdm==4.66.6
 
+For CHAP2.0 workflows, install the base environment above and then install the additional packages listed in `CHAP2/requirements.txt`.
+
 
 Instructions
 ------------
 - Clone the repository using git `git clone https://github.com/ADALabUCSD/DeepPostures.git`
-- Navigate to the code directory of the publication you want to explore and follow the instructions in the README file there. The `main` branch with the PyTorch only has implementation for `MSSE-2021`. The `tensorflow` branch has implementation for both `MSSE-2021` and `JMPB-2021`
+- Navigate to the code directory of the workflow you want to explore and follow the instructions in the README file there. The `main` branch contains the PyTorch implementation for `MSSE-2021` and CHAP2.0 workflows. The `tensorflow` branch contains the previous TensorFlow implementation for both `MSSE-2021` and `JMPB-2021`.
 - If you face any problems/issues, please create an issue in GitHub issue tracker.
 
 
