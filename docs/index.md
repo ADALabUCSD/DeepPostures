@@ -2,14 +2,14 @@
 layout: default
 title: Home
 nav_order: 0
-description: "Deep Learning Methods for Identifying Human Postures from Hip-Worn Accelerometer Data"
+description: "Deep Learning Methods for Identifying Human Postures from Body-Worn Accelerometer Data"
 permalink: /
 ---
 
 # DeepPostures
 {: .fs-9 }
 
-DeepPostures is a library containing deep learning methods for identifying human postures from hip-worn accelerometer data.
+DeepPostures is a library containing deep learning methods for identifying human postures from body-worn accelerometer data.
 {: .fs-6 .fw-300 }
 
 [Download the library]({{ site.baseurl }}{% link getting_started/get_lib.md %}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Watch Demos]({{ site.baseurl }}{% link demo.md %}){: .btn .fs-5 .mb-4 .mb-md-0 } [View it on GitHub](https://github.com/ADALabUCSD/DeepPostures){: .btn .fs-5 .mb-4 .mb-md-0 }
@@ -34,7 +34,7 @@ Sedentary behavior (SB), especially in long uninterrupted bouts, is linked to al
 
 ## Acknowledgements
 
-This work was supported by grant number R01DK114945 from the National Institute of Diabetes and Digestive and Kidney Diseases. It was also supported in part by a Hellman Fellowship, an NSF CAREER Award under award number 1942724, and gifts from VMware. 
+This work was supported by grant number R01DK114945 from the National Institute of Diabetes and Digestive and Kidney Diseases, and by grant number 1R01HL168535 from the National Heart, Lung and Blood Institute. It was also supported in part by a Hellman Fellowship, an NSF CAREER Award under award number 1942724, and a gift from VMware. The content is solely the responsibility of the authors and does not necessarily represent the views of any of these organizations. We thank the members of UC San Diego's Database Lab and Center for Networked Systems for their feedback on this work.
 
 ## License
 
