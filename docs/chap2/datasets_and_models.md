@@ -115,19 +115,24 @@ process those subject groups separately rather than relying on one mixed run.
 
 ### iWatch input files
 
-For iWatch, preprocessing expects hip or wrist ActiGraph raw files and can use
-SenseCam-derived event labels and location-specific non-wear intervals.
+For iWatch, preprocessing expects hip or wrist ActiGraph raw files,
+SenseCam-derived event labels, and support files that identify concurrent wear
+days, non-wear intervals, and SenseCam wear periods. Use the hip-specific
+concurrent wear file for hip ActiGraph data and the wrist-specific concurrent
+wear file for wrist ActiGraph data.
 
 | Input | Description |
 |-------|-------------|
-| `--gt3x-dir` | Directory containing iWatch ActiGraph raw CSV or CSV.GZ files. Use `--gzipped` for `.csv.gz` files. |
-| `--activpal-dir` | Directory containing event label CSV files matched to the raw ActiGraph file names. Use `--event-file` for this format. |
-| `--non-wear-times-file` | Optional iWatch non-wear interval file. If the file includes both hip and wrist records, pass `--loc hip` or `--loc wrist`. |
-| `--valid-days-file` | Optional valid-day CSV, if available. |
-| `--sleep-logs-file` / `--wear-logs-file` | Optional sleep or wear interval files, if available for the dataset version being processed. |
+| `--gt3x-dir` | Directory containing iWatch ActiGraph raw CSV or CSV.GZ files. Use `--gzipped` for `.csv.gz` files. Hip and wrist files are stored separately. |
+| `--activpal-dir` | Directory containing SenseCam-derived event label CSV files matched to the raw ActiGraph file names. Use `--event-file` for this format. |
+| `--valid-days-file` | Concurrent wear day CSV. Use the hip file for hip ActiGraph data and the wrist file for wrist ActiGraph data. |
+| `--non-wear-times-file` | iWatch ActiGraph non-wear interval file. If the file includes both hip and wrist records, pass `--loc hip` or `--loc wrist`. |
+| `--wear-logs-file` | SenseCam-derived wear interval CSV. The preprocessing script uses it to anchor observed wear periods when sleep logs are not available. |
 
-The ActiGraph raw files are gzipped CSV files. The first few lines of a sample
-file are as follows:
+The ActiGraph raw files are gzipped CSV files from hip (`H`) or wrist (`W`)
+wear. Wrist files are from non-dominant wrist wear or wrist wear where the hand
+is unknown; known dominant-wrist records were excluded. The first few lines of a
+sample file are as follows:
 
 ```text
 ------------ Data File Created By ActiGraph GT3X+ ActiLife v6.13.4 Firmware v3.2.1 date format M/d/yyyy at 30 Hz  Filter Normal -----------
@@ -145,8 +150,9 @@ Accelerometer X,Accelerometer Y,Accelerometer Z
 -0.387,0.094,0.956
 ```
 
-The event label files are CSV files with start time, duration, and activity
-code columns:
+The event label files come from SenseCam annotations formatted as event-style
+activPAL input. These files are the ground-truth labels and are shared for hip
+and wrist ActiGraph preprocessing:
 
 ```text
 "Time","DataCount (samples)","Interval (s)","ActivityCode (0=sedentary, 1= standing, 2=stepping)","CumulativeStepCount","Activity Score (MET.h)","Abs(sumDiff)"
@@ -156,7 +162,20 @@ code columns:
 "41820.3881944444","",120,-2,"","",""
 ```
 
-The iWatch non-wear file can include both hip and wrist records. Use `--loc` to
+The concurrent wear files identify valid subject days when the required devices
+were worn together. The preprocessing script marks days outside this list as
+non-wear:
+
+```text
+"ID","valid_days","wearloc"
+"i0001A",2013-05-07,"H"
+"i0001A",2013-05-08,"H"
+"i0001A",2013-05-09,"H"
+"i0001A",2013-05-10,"H"
+```
+
+The iWatch non-wear file contains ActiGraph non-wear intervals detected from the
+accelerometer data. It can include both hip and wrist records, so use `--loc` to
 select the wear location:
 
 ```text
@@ -164,6 +183,16 @@ select the wear location:
 "i0234A","N",2014-04-16,1440,2014-04-16,0,"i0234A_N2005760sec.agd","Wrist"
 "i0234A","N",2014-04-17,874,2014-04-17,0,"i0234A_N2005760sec.agd","Wrist"
 "i0234A","N",2014-04-17 15:40:00,500,2014-04-17,940,"i0234A_N2005760sec.agd","Wrist"
+```
+
+The wear-log file is derived from SenseCam wear periods and is used to anchor
+when participants were observed to be wearing the camera:
+
+```text
+"shortID","startWear","endWear","wearStart","wearEnd","wearDate","timeNum","int.min"
+"i0001A",2013-05-07 14:46:00,2013-05-07 22:42:00,"2013-05-07","2013-05-07","2013-05-07",886,476
+"i0001A",2013-05-08 07:02:00,2013-05-08 07:09:00,"2013-05-08","2013-05-08","2013-05-08",422,7
+"i0001A",2013-05-08 07:17:00,2013-05-08 07:49:00,"2013-05-08","2013-05-08","2013-05-08",437,32
 ```
 
 The preprocessing script converts these inputs into daily HDF5 files used by
