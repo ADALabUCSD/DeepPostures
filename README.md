@@ -43,4 +43,4 @@ Instructions
 
 Acknowledgement
 ---------------
-This work was supported by grant number R01DK114945 from the National Institute of Diabetes and Digestive and Kidney Diseases. It was also supported in part by a Hellman Fellowship, an NSF CAREER Award under award number 1942724, and a gift from VMware. The content is solely the responsibility of the authors and does not necessarily represent the views of any of these organizations. We thank the members of UC San Diego's Database Lab and Center for Networked Systems for their feedback on this work.
+This work was supported by grant number R01DK114945 from the National Institute of Diabetes and Digestive and Kidney Diseases, and by grant number 1R01HL168535 from the National Heart, Lung and Blood Institute. It was also supported in part by a Hellman Fellowship, an NSF CAREER Award under award number 1942724, and a gift from VMware. The content is solely the responsibility of the authors and does not necessarily represent the views of any of these organizations. We thank the members of UC San Diego’s Database Lab and Center for Networked Systems for their feedback on this work.
