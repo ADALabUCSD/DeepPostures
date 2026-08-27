@@ -20,4 +20,4 @@ Here are some videos.
 
 ## End-to-end tutorial 
 Including installation and basic usage, open CC before watching.
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qXMs32VSgPo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0dmBw4Xv--s" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
