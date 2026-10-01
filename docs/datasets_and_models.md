@@ -65,8 +65,6 @@ Data for the CHAP-CHILD model came from  the Patterns of Habitual Activity acros
 
 - **(Optional) Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
-    The subject ID in this example is an anonymized placeholder.
-
     ~~~
     ID,Date.Valid.Day
     33333,1/19/2018

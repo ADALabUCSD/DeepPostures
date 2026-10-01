@@ -44,9 +44,6 @@ dataset-specific annotation files into daily HDF5 files.
 
 ### SOL/PASOS input files
 
-Subject IDs in the examples below are anonymized as `33333`. Examples from
-different files or datasets do not necessarily represent the same participant.
-
 For SOL/PASOS, preprocessing expects wrist ActiGraph raw files and can use
 supporting annotation files for valid wear days, sleep or in-bed time,
 non-wear intervals, and activPAL posture labels.
