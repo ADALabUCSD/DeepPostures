@@ -52,8 +52,8 @@ non-wear intervals, and activPAL posture labels.
 |-------|-------------|
 | `--gt3x-dir` | Directory containing SOL/PASOS ActiGraph raw CSV files. Use the matching `--gt3x-frequency` for the input files. |
 | `--valid-days-file` | Optional CSV identifying concurrent wear or valid analysis days. |
-| `--sleep-logs-file` | Optional sleep or in-bed interval file. SOL/PASOS sleep logs use subject ID plus sleep start and sleep end timestamps. |
-| `--non-wear-times-file` | Optional non-wear interval file. SOL/PASOS non-wear files use subject ID plus non-wear start and end timestamps. |
+| `--sleep-logs-file` | Optional sleep or in-bed interval file. SOL/PASOS VIDA sleep logs use `ID`, `startSL`, and `endSL` columns. |
+| `--non-wear-times-file` | Optional non-wear interval file. SOL/PASOS non-wear files use `ID`, `startNW`, and `endNW` columns. |
 | `--activpal-dir` | Directory containing activPAL label files. Leave `--event-file` unset for 1-second epoch files with `TS_LOCAL` and `PL_ACTIVITY_NEW` columns. `TS_LOCAL` is used to align with the ActiGraph timestamps; `TS_LOCAL_COR` is not used. |
 
 The ActiGraph raw files are gzipped CSV files. The first few lines of a sample

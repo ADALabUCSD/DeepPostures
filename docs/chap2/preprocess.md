@@ -99,9 +99,9 @@ by header names.
 |------|-----------------------------|
 | `--gt3x-dir` | Directory containing raw accelerometer CSV files. Use `--gt3x-frequency` to specify the raw sampling frequency and `--down-sample-frequency` to set the output frequency. |
 | `--valid-days-file` | CHAP1.0-style valid-day CSV with subject/date rows. |
-| `--sleep-logs-file` | CHAP1.0 format: `ID, Date.In.Bed, Time.In.Bed, Date.Out.Bed, Time.Out.Bed`; CHAP2/SOL-style format: `id, startsleep, endsleep`. |
+| `--sleep-logs-file` | CHAP1.0 format: `ID, Date.In.Bed, Time.In.Bed, Date.Out.Bed, Time.Out.Bed`; CHAP2/SOL-style formats: `ID, startsleep, endsleep` or `ID, startSL, endSL`. |
 | `--wear-logs-file` | `shortid, startwear, endwear`; used as a complement to sleep logs when wear intervals are available. |
-| `--non-wear-times-file` | CHAP1.0 format: `ID, Date.nw.start, Time.nw.start, Date.nw.end, Time.nw.end`; iWatch-style format includes `id, wearloc, nw_dt, int.min, weardate, ..., loc`; SOL-style format: `id, startNW, endNW`. |
+| `--non-wear-times-file` | CHAP1.0 format: `ID, Date.nw.start, Time.nw.start, Date.nw.end, Time.nw.end`; iWatch-style format includes `id, wearloc, nw_dt, int.min, weardate, ..., loc`; SOL-style format: `ID, startNW, endNW` with `M/D/YY H:MM` or `YYYY-MM-DD HH:MM:SS` timestamps. |
 | `--activpal-dir` | Directory containing ActivPAL label files. Use `--event-file` for event-format files with `Time`, `Interval (s)`, and `ActivityCode` columns. Leave `--event-file` unset for 1-second epoch files using `TS_LOCAL` and `PL_ACTIVITY_NEW...` columns. `TS_LOCAL_COR` is not used for ActiGraph alignment. |
 
 For iWatch non-wear files that include both hip and wrist records, pass
@@ -109,8 +109,9 @@ For iWatch non-wear files that include both hip and wrist records, pass
 
 For datasets with mixed sampling frequencies, split the raw files by frequency
 and run preprocessing separately with the matching `--gt3x-frequency`. For
-example, if a SOL/PASOS input directory contains both 60 Hz and 80 Hz files,
-process those subject groups separately rather than relying on one mixed run.
+SOL/PASOS, the hip recordings include 30 Hz and 80 Hz files, while the wrist
+recordings include 60 Hz and 80 Hz files. Each frequency group can be processed
+into the same wear-location output directory after downsampling to 10 Hz.
 
 ### Output format
 
