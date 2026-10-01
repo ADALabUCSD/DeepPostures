@@ -112,8 +112,10 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, wear_logs_dic
             #                      'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
             event_labels = ap_df['ActivityCode'].apply(
                 lambda x: label_map[str(x)]).tolist()
-        else: # 1-second epoch
-            ap_df['Time'] = pd.to_datetime(ap_df['TS_LOCAL_COR'], format="%Y-%m-%dT%H:%M:%SZ")
+        else: # 1-second epoch; TS_LOCAL aligns with the ActiGraph local timestamp.
+            if 'TS_LOCAL' not in ap_df.columns:
+                raise ValueError('1-second activPAL files must contain a TS_LOCAL column.')
+            ap_df['Time'] = pd.to_datetime(ap_df['TS_LOCAL'], format="%Y-%m-%dT%H:%M:%SZ")
             event_start_times = ap_df['Time'].tolist()
             event_intervals = [timedelta(seconds=1)] * len(ap_df)
             ap_df.columns = ap_df.columns.map(lambda col: 'ActivityCode' if col.startswith('PL_ACTIVITY_NEW') else col)
@@ -704,7 +706,7 @@ if __name__ == "__main__":
         '--activpal-dir', help='ActivPAL data directory',  default=None, required=False)
     
     optional_arguments.add_argument(
-        '--event-file', help='Interpret ActivPAL CSVs as event-format files with Time and Interval (s) columns. Leave unset for 1-second epoch ActivPAL files.', default=False, required=False, action='store_true')
+        '--event-file', help='Interpret ActivPAL CSVs as event-format files with Time and Interval (s) columns. Leave unset for 1-second epoch ActivPAL files using TS_LOCAL.', default=False, required=False, action='store_true')
     
     optional_arguments.add_argument('--n-start-id', help='The index of the starting character of the ID in gt3x file names. Indexing starts with 1. \
                         If specified `n_end_ID` should also be specified. If both `n_start_ID` and `expression_after_ID` is \

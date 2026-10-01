@@ -102,7 +102,7 @@ by header names.
 | `--sleep-logs-file` | CHAP1.0 format: `ID, Date.In.Bed, Time.In.Bed, Date.Out.Bed, Time.Out.Bed`; CHAP2/SOL-style format: `id, startsleep, endsleep`. |
 | `--wear-logs-file` | `shortid, startwear, endwear`; used as a complement to sleep logs when wear intervals are available. |
 | `--non-wear-times-file` | CHAP1.0 format: `ID, Date.nw.start, Time.nw.start, Date.nw.end, Time.nw.end`; iWatch-style format includes `id, wearloc, nw_dt, int.min, weardate, ..., loc`; SOL-style format: `id, startNW, endNW`. |
-| `--activpal-dir` | Directory containing ActivPAL label files. Use `--event-file` for event-format files with `Time`, `Interval (s)`, and `ActivityCode` columns. Leave `--event-file` unset for 1-second epoch files using `TS_LOCAL_COR` and `PL_ACTIVITY_NEW...` columns. |
+| `--activpal-dir` | Directory containing ActivPAL label files. Use `--event-file` for event-format files with `Time`, `Interval (s)`, and `ActivityCode` columns. Leave `--event-file` unset for 1-second epoch files using `TS_LOCAL` and `PL_ACTIVITY_NEW...` columns. `TS_LOCAL_COR` is not used for ActiGraph alignment. |
 
 For iWatch non-wear files that include both hip and wrist records, pass
 `--loc hip` or `--loc wrist` to select the device location to process.

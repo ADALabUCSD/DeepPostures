@@ -54,7 +54,7 @@ non-wear intervals, and activPAL posture labels.
 | `--valid-days-file` | Optional CSV identifying concurrent wear or valid analysis days. |
 | `--sleep-logs-file` | Optional sleep or in-bed interval file. SOL/PASOS sleep logs use subject ID plus sleep start and sleep end timestamps. |
 | `--non-wear-times-file` | Optional non-wear interval file. SOL/PASOS non-wear files use subject ID plus non-wear start and end timestamps. |
-| `--activpal-dir` | Directory containing activPAL label files. Leave `--event-file` unset for 1-second epoch files with `TS_LOCAL_COR` and `PL_ACTIVITY_NEW` columns. |
+| `--activpal-dir` | Directory containing activPAL label files. Leave `--event-file` unset for 1-second epoch files with `TS_LOCAL` and `PL_ACTIVITY_NEW` columns. `TS_LOCAL` is used to align with the ActiGraph timestamps; `TS_LOCAL_COR` is not used. |
 
 The ActiGraph raw files are gzipped CSV files. The first few lines of a sample
 file are as follows:
@@ -82,6 +82,9 @@ HCHSID,TS_LOCAL_COR,TS_LOCAL,TS_UTC,PL_ACTIVITY,PL_ACTIVITY_NEW,PL_DUR,PL_WAKE_P
 M7148383,2022-04-19T11:20:49Z,2022-04-19T11:20:49Z,2022-04-19T15:20:49Z,0,0,10546.3,1,0,0.000347222222222222,1
 M7148383,2022-04-19T11:20:50Z,2022-04-19T11:20:50Z,2022-04-19T15:20:50Z,0,0,10546.3,1,0,0.000347222222222222,1
 ```
+
+For these files, preprocessing reads the `TS_LOCAL` column, even when
+`TS_LOCAL_COR` is also present.
 
 The valid-days file identifies subject days with concurrent wear:
 
