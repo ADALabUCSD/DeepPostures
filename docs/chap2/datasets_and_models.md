@@ -44,6 +44,9 @@ dataset-specific annotation files into daily HDF5 files.
 
 ### SOL/PASOS input files
 
+Subject IDs in the examples below are anonymized as `33333`. Examples from
+different files or datasets do not necessarily represent the same participant.
+
 For SOL/PASOS, preprocessing expects wrist ActiGraph raw files and can use
 supporting annotation files for valid wear days, sleep or in-bed time,
 non-wear intervals, and activPAL posture labels.
@@ -79,8 +82,8 @@ The activPAL files provide 1-second epoch posture labels:
 
 ```text
 HCHSID,TS_LOCAL_COR,TS_LOCAL,TS_UTC,PL_ACTIVITY,PL_ACTIVITY_NEW,PL_DUR,PL_WAKE_PRD,PL_STEPS,PL_MET_H,PL_WAKESLEEPDAY_ID
-M7148383,2022-04-19T11:20:49Z,2022-04-19T11:20:49Z,2022-04-19T15:20:49Z,0,0,10546.3,1,0,0.000347222222222222,1
-M7148383,2022-04-19T11:20:50Z,2022-04-19T11:20:50Z,2022-04-19T15:20:50Z,0,0,10546.3,1,0,0.000347222222222222,1
+33333,2022-04-19T11:20:49Z,2022-04-19T11:20:49Z,2022-04-19T15:20:49Z,0,0,10546.3,1,0,0.000347222222222222,1
+33333,2022-04-19T11:20:50Z,2022-04-19T11:20:50Z,2022-04-19T15:20:50Z,0,0,10546.3,1,0,0.000347222222222222,1
 ```
 
 For these files, preprocessing reads the `TS_LOCAL` column, even when
@@ -90,25 +93,25 @@ The valid-days file identifies subject days with concurrent wear:
 
 ```text
 "ID","valid_days"
-"C6002331",2023-11-25
-"C6002331",2023-11-26
-"C6002331",2023-11-27
+"33333",2023-11-25
+"33333",2023-11-26
+"33333",2023-11-27
 ```
 
 The sleep-log file contains subject-level sleep or in-bed intervals:
 
 ```text
 ID,startsleep,endsleep
-B5025951,3/28/23 23:00,3/29/23 9:09
-B5025951,3/30/23 20:29,3/31/23 9:14
+33333,3/28/23 23:00,3/29/23 9:09
+33333,3/30/23 20:29,3/31/23 9:14
 ```
 
 The non-wear file contains subject-level non-wear intervals:
 
 ```text
 ID,startNW,endNW
-C6003361,6/20/22 5:39,6/20/22 7:16
-C6003361,6/20/22 23:58,6/21/22 10:12
+33333,6/20/22 5:39,6/20/22 7:16
+33333,6/20/22 23:58,6/21/22 10:12
 ```
 
 For datasets with mixed raw sampling frequencies, split raw files by frequency
@@ -171,10 +174,10 @@ non-wear:
 
 ```text
 "ID","valid_days","wearloc"
-"i0001A",2013-05-07,"H"
-"i0001A",2013-05-08,"H"
-"i0001A",2013-05-09,"H"
-"i0001A",2013-05-10,"H"
+"33333",2013-05-07,"H"
+"33333",2013-05-08,"H"
+"33333",2013-05-09,"H"
+"33333",2013-05-10,"H"
 ```
 
 The iWatch non-wear file contains ActiGraph non-wear intervals detected from the
@@ -183,9 +186,9 @@ select the wear location:
 
 ```text
 "ID","wearLoc","NW_DT","int.min","wearDate","timeNum","filename","loc"
-"i0234A","N",2014-04-16,1440,2014-04-16,0,"i0234A_N2005760sec.agd","Wrist"
-"i0234A","N",2014-04-17,874,2014-04-17,0,"i0234A_N2005760sec.agd","Wrist"
-"i0234A","N",2014-04-17 15:40:00,500,2014-04-17,940,"i0234A_N2005760sec.agd","Wrist"
+"33333","N",2014-04-16,1440,2014-04-16,0,"33333_N2005760sec.agd","Wrist"
+"33333","N",2014-04-17,874,2014-04-17,0,"33333_N2005760sec.agd","Wrist"
+"33333","N",2014-04-17 15:40:00,500,2014-04-17,940,"33333_N2005760sec.agd","Wrist"
 ```
 
 The wear-log file is derived from SenseCam wear periods and is used to anchor
@@ -193,9 +196,9 @@ when participants were observed to be wearing the camera:
 
 ```text
 "shortID","startWear","endWear","wearStart","wearEnd","wearDate","timeNum","int.min"
-"i0001A",2013-05-07 14:46:00,2013-05-07 22:42:00,"2013-05-07","2013-05-07","2013-05-07",886,476
-"i0001A",2013-05-08 07:02:00,2013-05-08 07:09:00,"2013-05-08","2013-05-08","2013-05-08",422,7
-"i0001A",2013-05-08 07:17:00,2013-05-08 07:49:00,"2013-05-08","2013-05-08","2013-05-08",437,32
+"33333",2013-05-07 14:46:00,2013-05-07 22:42:00,"2013-05-07","2013-05-07","2013-05-07",886,476
+"33333",2013-05-08 07:02:00,2013-05-08 07:09:00,"2013-05-08","2013-05-08","2013-05-08",422,7
+"33333",2013-05-08 07:17:00,2013-05-08 07:49:00,"2013-05-08","2013-05-08","2013-05-08",437,32
 ```
 
 The preprocessing script converts these inputs into daily HDF5 files used by

@@ -65,15 +65,17 @@ Data for the CHAP-CHILD model came from  the Patterns of Habitual Activity acros
 
 - **(Optional) Valid Days File**: A .csv file indicating which dates are valid (concurrent wear days) for all subjects. Each row is subject id, date pair. The header should be of the from `ID,Date.Valid.Day`.  Date values should be formatted in `%m/%d/%Y` format. A sample valid days file is shown below.
 
+    The subject ID in this example is an anonymized placeholder.
+
     ~~~
     ID,Date.Valid.Day
-    156976,1/19/2018
-    156976,1/20/2018
-    156976,1/21/2018
-    156976,1/22/2018
-    156976,1/23/2018
-    156976,1/24/2018
-    156976,1/25/2018
+    33333,1/19/2018
+    33333,1/20/2018
+    33333,1/21/2018
+    33333,1/22/2018
+    33333,1/23/2018
+    33333,1/24/2018
+    33333,1/25/2018
     ~~~
 
 - **(Optional) Sleep Logs File**: A .csv file indicating sleep records for all subjects. Each row is tuple of subject id, date went to bed, time went to bed, data came out of bed, and time went out of bed. The header should be of the form `ID,Date.In.Bed,Time.In.Bed,Date.Out.Bed,Time.Out.Bed`. Date values should be formatted in `%m/%d/%Y` format and time values should be formatted in `%H:%M` format. A sample sleep logs file is shown below.
