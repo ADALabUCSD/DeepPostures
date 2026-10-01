@@ -110,13 +110,14 @@ not currently provide `zero` or `wrap` padding options.
 Pass one of the submitted CHAP2.0 checkpoints under `CHAP2/SUBMIT_RESULT/`, or
 a CHAP checkpoint trained with `main_finetune.py`.
 
-CHAP-ZS means zero-shot prediction: the CHAP/MSSE-2021 pre-trained checkpoint
-is applied directly to the target dataset without fine-tuning. The separate
-CHAP-ZS folders correspond to different target datasets or sensor locations,
-not to separately trained zero-shot models.
+CHAP-ZS means zero-shot prediction. The iWatch CHAP-ZS checkpoints apply the
+MSSE-2021 `CHAP_ALL_ADULTS` model, pre-trained on the ACT and AusDiab datasets,
+to iWatch data without fine-tuning. The separate CHAP-ZS folders
+correspond to different target datasets or sensor locations, not to separately
+trained zero-shot models.
 
-CHAP-FT checkpoints are fine-tuned from CHAP/MSSE-2021 weights on the target
-dataset. See [Datasets and Models]({{ site.baseurl }}{% link chap2/datasets_and_models.md %})
+CHAP-FT checkpoints are initialized from these pre-trained weights and then
+fine-tuned on the target dataset. See [Datasets and Models]({{ site.baseurl }}{% link chap2/datasets_and_models.md %})
 for more details on the submitted checkpoints and recommended defaults.
 
 If you want to fine-tune a checkpoint on your own labeled dataset, see

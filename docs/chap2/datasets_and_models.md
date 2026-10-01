@@ -210,7 +210,7 @@ Use these checkpoints as the default recommendations for CHAP2.0 prediction:
 | Checkpoint | Recommended for |
 |------------|-----------------|
 | `SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth` | ActiGraph wrist data. |
-| `SUBMIT_RESULT/iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | ActiGraph hip data (ACT and AusDiab trained). |
+| `SUBMIT_RESULT/iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | ActiGraph hip data; the zero-shot model was pre-trained on ACT and AusDiab. |
 
 The SOL/PASOS fine-tuned wrist checkpoint is the recommended wrist model. The
 iWatch wrist checkpoint is retained for reproducibility, but is not the default
@@ -222,10 +222,11 @@ CHAP2.0 submitted checkpoints are stored under `CHAP2/SUBMIT_RESULT/` and can
 be used with the CHAP2.0
 [prediction workflow]({{ site.baseurl }}{% link chap2/prediction.md %}).
 
-CHAP-ZS means zero-shot prediction: the CHAP/MSSE-2021 pre-trained checkpoint
-is applied directly to the target dataset without fine-tuning. CHAP-FT
-checkpoints are initialized from CHAP/MSSE-2021 weights and then fine-tuned on
-the target dataset.
+CHAP-ZS means zero-shot prediction. The iWatch wrist and hip CHAP-ZS
+checkpoints apply the MSSE-2021 `CHAP_ALL_ADULTS` model, pre-trained on the ACT
+and AusDiab datasets, to iWatch data without fine-tuning. CHAP-FT
+checkpoints are initialized from these pre-trained weights and then fine-tuned
+on their respective target datasets.
 
 The following checkpoints are included for reproducibility and comparison; not
 all are recommended as default models.
@@ -234,6 +235,6 @@ all are recommended as default models.
 |------------|------|-------------|-------|
 | `SOL_W/CHAP_FT/checkpoint-submit.pth` | CHAP-FT | SOL/PASOS wrist | Fine-tuned on SOL/PASOS wrist data; recommended for ActiGraph wrist data. |
 | `iWatch_W/CHAP-FT/checkpoint/checkpoint-submit.pth` | CHAP-FT | iWatch wrist | Fine-tuned on iWatch wrist data; retained for reproducibility. |
-| `iWatch_W/CHAP-ZS/checkpoint/checkpoint-submit.pth` | CHAP-ZS | iWatch wrist | Zero-shot baseline for iWatch wrist data. |
+| `iWatch_W/CHAP-ZS/checkpoint/checkpoint-submit.pth` | CHAP-ZS | iWatch wrist | ACT- and AusDiab-pre-trained model applied without iWatch fine-tuning. |
 | `iWatch_H/CHAP-FT/checkpoint/checkpoint-submit.pth` | CHAP-FT | iWatch hip | Fine-tuned on iWatch hip data; retained for reproducibility. |
-| `iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | CHAP-ZS | iWatch hip | Recommended checkpoint for ActiGraph hip data trained on ACT and AusDiab. |
+| `iWatch_H/CHAP-ZS/checkpoint/checkpoint-submit.pth` | CHAP-ZS | iWatch hip | ACT- and AusDiab-pre-trained model applied without iWatch fine-tuning; recommended for ActiGraph hip data. |
