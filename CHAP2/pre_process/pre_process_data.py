@@ -19,6 +19,7 @@ import gc
 import h5py
 import json
 import logging
+import shutil
 import pandas as pd
 import numpy as np
 from scipy.stats import mode
@@ -51,9 +52,7 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
         label_values.append(mode([x[6] for x in temp])[0])
 
     # flush data, free memory
-    # A second recording on the same subject/day must not silently overwrite
-    # an earlier recording (or the output from a previous run).
-    h5f_out = h5py.File(subject_data_file_path, "x")
+    h5f_out = h5py.File(subject_data_file_path, "w")
     h5f_out.create_dataset('time', data=np.array(
         time_values), chunks=True, maxshape=(None,))
     h5f_out.create_dataset('data', data=np.array(
@@ -239,9 +238,9 @@ def fn(
         logger.error(
             'Failed pre-processing for the subject {}'.format(subject_id))
         logger.error(e, exc_info=True)
-        # Propagate the failure to the Job controller. Removing the entire
-        # subject directory could erase successful recordings from other files.
-        raise
+        output_dir_path = os.path.join(pre_process_data_output_dir, subject_id)
+        if os.path.exists(output_dir_path):
+            shutil.rmtree(output_dir_path)
 
 
 def get_date_string(string):
@@ -377,12 +376,10 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                             "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(sleep_logs_file, line))
 
                     sleep_logs_dict[id].append((start_time, end_time))
-            elif len(header) == 3: # CHAP2.0 / SOL VIDA sleep logs
-                if header[0].strip() != "id" or (header[1].strip(), header[2].strip()) not in (
-                    ("startsleep", "endsleep"), ("startsl", "endsl")
-                ):
+            elif len(header) == 3: #CHAP2.0
+                if header[0].strip() != "id" or header[1].strip() != "startsleep" or header[2].strip() != "endsleep":
                     raise Exception(
-                        'sleep_logs_file should have three header columns (ID, startsleep, endsleep) or (ID, startSL, endSL).')
+                        'sleep_logs_file should have three header columns (ID, startsleep, endsleep).')
 
                 for line in lines[1:]:
                     line = line.strip()
@@ -587,19 +584,13 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                     if id not in non_wear_dict:
                         non_wear_dict[id] = []
 
-                    parsed = None
-                    for fmt in ("%m/%d/%y %H:%M", "%Y-%m-%d %H:%M:%S"):
-                        try:
-                            parsed = (datetime.strptime(start_time, fmt),
-                                      datetime.strptime(end_time, fmt))
-                            break
-                        except ValueError:
-                            continue
-                    if parsed is None:
-                        raise ValueError(
-                            "SOL non-wear timestamps must use M/D/YY H:MM or YYYY-MM-DD HH:MM:SS format."
-                        )
-                    start_time, end_time = parsed
+                    try:
+                        # append datetime.datetime object
+                        start_time = datetime.strptime(start_time, "%m/%d/%y %H:%M")#.strftime("%Y-%m-%d %H:%M")
+                        end_time = datetime.strptime(end_time, "%m/%d/%y %H:%M")#.strftime("%Y-%m-%d %H:%M")
+                    except:
+                        raise Exception(
+                            "date should be in %m/%d/%y format and time should be in %H:%M format. Found: {}".format(line))
                     
                     non_wear_dict[id].append((start_time, end_time))
             else:
