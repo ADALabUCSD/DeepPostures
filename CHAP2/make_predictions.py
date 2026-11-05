@@ -11,9 +11,11 @@ Each daily .h5 has keys:
     non_wear  (N,)          1 = device off
     sleeping  (N,)          1 = asleep
 
-For each subject, contiguous awake/worn 10s windows are grouped into chunks of
---window_size (default 42 = ~7 minutes), the model is run on each chunk, and
-one CSV is written per subject:
+With --prediction_mode filtered (default), sleep/non-wear windows are excluded
+and split the input into segments. With --prediction_mode consecutive, those
+windows are retained. Unknown labels are retained in both prediction modes.
+Each segment is grouped into --window_size chunks (default 42 = 7 minutes),
+discarding its incomplete tail, and one CSV is written per subject:
     segment, timestamp, prediction[, label]
 
 The `label` column is included only if the input has any labeled windows;
@@ -40,7 +42,7 @@ from util.commons import input_iterator
 LABEL_VOCAB = {0: "sitting", 1: "not-sitting", -1: "no-label"}
 
 
-def collect_subject_windows(data_dir, subject_id, window_size):
+def collect_subject_windows(data_dir, subject_id, window_size, filter_invalid=True):
     """Group a subject's contiguous 10s windows into fixed-size chunks.
 
     Returns (x, y, ts) with shapes (M, window_size, 100, 3), (M, window_size),
@@ -49,7 +51,9 @@ def collect_subject_windows(data_dir, subject_id, window_size):
     match the model's fixed bi_lstm_win_size.
     """
     x_chunks, y_chunks, ts_chunks = [], [], []
-    for x_seg, ts_seg, y_seg in input_iterator(data_dir, subject_id, train=False):
+    for x_seg, ts_seg, y_seg in input_iterator(
+        data_dir, subject_id, train=False, filter_invalid=filter_invalid
+    ):
         n = len(y_seg)
         n_full = (n // window_size) * window_size
         if n_full == 0:
@@ -121,20 +125,28 @@ def discover_subjects(data_dir, explicit):
 
 def get_args_parser():
     p = argparse.ArgumentParser('make_predictions',
-        description='Run a CHAP wrist/hip checkpoint on CHAP-preprocessed daily HDF5 data.')
-    p.add_argument('--data_dir', required=True,
+        description='Run a CHAP wrist/hip checkpoint on CHAP-preprocessed daily HDF5 data.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument('--data_dir', required=True, default=argparse.SUPPRESS,
                    help='CHAP-preprocessed daily HDF5 dir: <data_dir>/<subject_id>/<YYYY-MM-DD>.h5')
-    p.add_argument('--checkpoint', required=True, help='Path to model .pth')
-    p.add_argument('--prediction_dir', required=True,
+    p.add_argument('--checkpoint', required=True, default=argparse.SUPPRESS, help='Path to model .pth')
+    p.add_argument('--prediction_dir', required=True, default=argparse.SUPPRESS,
                    help='Output dir for per-subject CSVs')
     p.add_argument('--subjects', default=None,
-                   help='Comma-separated subject IDs (default: all subdirs of --data_dir)')
-    p.add_argument('--model', default='CHAP', help='Model architecture (default: CHAP)')
+                   help='Comma-separated subject IDs; None runs all non-hidden subject directories under --data_dir')
+    p.add_argument('--model', default='CHAP', help='Model architecture; submitted checkpoints use CHAP')
     p.add_argument('--window_size', type=int, default=42,
-                   help='10s windows per inference chunk; must match training (default: 42)')
-    p.add_argument('--batch_size', type=int, default=64)
-    p.add_argument('--device', default='cuda', choices=['cpu', 'cuda'])
-    p.add_argument('--seed', type=int, default=0)
+                   help='10-second windows per inference chunk; 42 is 7 minutes. Match the checkpoint configuration')
+    p.add_argument('--prediction_mode', choices=['filtered', 'consecutive'],
+                   default='filtered',
+                   help='filtered: exclude sleep/non-wear and split there; '
+                        'consecutive: retain those windows. Both retain unknown labels '
+                        'and discard incomplete sequence tails.')
+    p.add_argument('--batch_size', type=int, default=64,
+                   help='Number of inference chunks per batch')
+    p.add_argument('--device', default='cuda', choices=['cpu', 'cuda'],
+                   help='Inference device; use cpu when CUDA is unavailable')
+    p.add_argument('--seed', type=int, default=0, help='Random seed')
     return p
 
 
@@ -149,9 +161,13 @@ def main(args):
 
     subjects = discover_subjects(args.data_dir, args.subjects)
     print(f"Found {len(subjects)} subject(s) under {args.data_dir}")
+    print(f"Prediction mode: {args.prediction_mode}")
 
     for subject_id in tqdm(subjects, desc='Subjects'):
-        x, y, ts = collect_subject_windows(args.data_dir, subject_id, args.window_size)
+        x, y, ts = collect_subject_windows(
+            args.data_dir, subject_id, args.window_size,
+            filter_invalid=args.prediction_mode == 'filtered'
+        )
         if x is None:
             print(f"[skip] {subject_id}: no full chunk of {args.window_size} windows")
             continue

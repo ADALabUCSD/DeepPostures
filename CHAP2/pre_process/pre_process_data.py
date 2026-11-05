@@ -19,7 +19,6 @@ import gc
 import h5py
 import json
 import logging
-import shutil
 import pandas as pd
 import numpy as np
 from scipy.stats import mode
@@ -31,6 +30,35 @@ import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+SUPPORT_TIMESTAMP_FORMATS = ("%m/%d/%y %H:%M", "%Y-%m-%d %H:%M:%S")
+
+
+def parse_support_timestamp(value):
+    """Accept the original and revised SOL sleep/non-wear timestamp formats."""
+    for fmt in SUPPORT_TIMESTAMP_FORMATS:
+        try:
+            return datetime.strptime(value.strip(), fmt)
+        except ValueError:
+            continue
+    raise ValueError("Unsupported support timestamp format; expected M/D/YY H:MM or YYYY-MM-DD H:MM:SS.")
+
+
+
+def map_activity_code(value, label_map):
+    """Map numeric activPAL codes; missing or unmapped codes remain unknown."""
+    if pd.isna(value):
+        return -1
+    key = str(value).strip()
+    if key in label_map:
+        return label_map[key]
+    try:
+        numeric = float(key)
+    except ValueError:
+        return -1
+    if np.isfinite(numeric) and numeric.is_integer():
+        return label_map.get(str(int(numeric)), -1)
+    return -1
 
 def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, values_being_written, CNN_WINDOW_SIZE, RESOLUTION):
     # File path
@@ -52,7 +80,9 @@ def write_data_to_file(pre_process_data_output_dir, subject_id, start_date, valu
         label_values.append(mode([x[6] for x in temp])[0])
 
     # flush data, free memory
-    h5f_out = h5py.File(subject_data_file_path, "w")
+    # A second recording on the same subject/day must not silently overwrite
+    # an earlier recording (or the output from a previous run).
+    h5f_out = h5py.File(subject_data_file_path, "x")
     h5f_out.create_dataset('time', data=np.array(
         time_values), chunks=True, maxshape=(None,))
     h5f_out.create_dataset('data', data=np.array(
@@ -111,7 +141,7 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, wear_logs_dic
             # ap_df = ap_df.rename(columns={
             #                      'ActivityCode (0=sedentary, 1= standing, 2=stepping)': 'ActivityCode (0=sedentary, 1=standing, 2=stepping)'})
             event_labels = ap_df['ActivityCode'].apply(
-                lambda x: label_map[str(x)]).tolist()
+                lambda x: map_activity_code(x, label_map)).tolist()
         else: # 1-second epoch; TS_LOCAL aligns with the ActiGraph local timestamp.
             if 'TS_LOCAL' not in ap_df.columns:
                 raise ValueError('1-second activPAL files must contain a TS_LOCAL column.')
@@ -119,7 +149,8 @@ def map_function(gt3x_file, concurrent_wear_dict, sleep_logs_dict, wear_logs_dic
             event_start_times = ap_df['Time'].tolist()
             event_intervals = [timedelta(seconds=1)] * len(ap_df)
             ap_df.columns = ap_df.columns.map(lambda col: 'ActivityCode' if col.startswith('PL_ACTIVITY_NEW') else col)
-            event_labels = ap_df['ActivityCode'].apply(lambda x: label_map[str(x)]).tolist()
+            event_labels = ap_df['ActivityCode'].apply(
+                lambda x: map_activity_code(x, label_map)).tolist()
 
 
 
@@ -238,9 +269,9 @@ def fn(
         logger.error(
             'Failed pre-processing for the subject {}'.format(subject_id))
         logger.error(e, exc_info=True)
-        output_dir_path = os.path.join(pre_process_data_output_dir, subject_id)
-        if os.path.exists(output_dir_path):
-            shutil.rmtree(output_dir_path)
+        # Propagate the failure to the Job controller. Removing the entire
+        # subject directory could erase successful recordings from other files.
+        raise
 
 
 def get_date_string(string):
@@ -376,10 +407,12 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                             "In {}, date should be in %m/%d/%Y format and time should be in %H:%M format. Found: {}".format(sleep_logs_file, line))
 
                     sleep_logs_dict[id].append((start_time, end_time))
-            elif len(header) == 3: #CHAP2.0
-                if header[0].strip() != "id" or header[1].strip() != "startsleep" or header[2].strip() != "endsleep":
+            elif len(header) == 3: # CHAP2.0 / SOL VIDA sleep logs
+                if header[0].strip() != "id" or (header[1].strip(), header[2].strip()) not in (
+                    ("startsleep", "endsleep"), ("startsl", "endsl")
+                ):
                     raise Exception(
-                        'sleep_logs_file should have three header columns (ID, startsleep, endsleep).')
+                        'sleep_logs_file should have three header columns (ID, startsleep, endsleep) or (ID, startSL, endSL).')
 
                 for line in lines[1:]:
                     line = line.strip()
@@ -392,23 +425,8 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                     if id not in sleep_logs_dict:
                         sleep_logs_dict[id] = []
 
-                    formats = ["%Y-%m-%d %H:%M:%S", "%m/%d/%y %H:%M"]
-                    start_time, end_time = None, None
-
-                    for fmt in formats:
-                        try:
-                            start_time = datetime.strptime(bits[1].strip(), fmt)
-                            end_time = datetime.strptime(bits[2].strip(), fmt)
-                            break
-                        except ValueError:
-                            continue
-
-                    if start_time is None or end_time is None:
-                        raise Exception(
-                            "In {}, sleep log times should match one of {}. Found: {}".format(
-                                sleep_logs_file, formats, line
-                            )
-                        )
+                    start_time = parse_support_timestamp(bits[1])
+                    end_time = parse_support_timestamp(bits[2])
 
                     sleep_logs_dict[id].append((start_time, end_time))
             else:
@@ -466,6 +484,7 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
 
     # 4. non_wear_times_file
     non_wear_dict = {}
+    location_specific_nonwear = False
     if non_wear_times_file is not None:
         if not os.path.isfile(non_wear_times_file):
             raise Exception(
@@ -520,13 +539,14 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
 
             # iWatch format
             elif len(header) >= 8 and header[1].strip() == "wearloc":
+                location_specific_nonwear = True
                 if loc is None:
-                    raise Exception('--loc must be provided for iWatch non-wear files. Use "hip" or "wrist".')
+                    raise ValueError('--loc must be provided for iWatch-style non-wear files, even for a single location. Use "hip" or "wrist"; there is no default location.')
 
                 if header[0].strip() != "id" or header[1].strip() != "wearloc" or header[2].strip() != "nw_dt" \
                         or header[3].strip() != "int.min" or header[4].strip() != "weardate" or header[7].strip()!="loc":
                     raise Exception(
-                        'non_wear_times_file should have header columns (ID, wearLoc, NW_DT, int.min, wearDate).')
+                        'iWatch-style non-wear files require ID, wearLoc, NW_DT, int.min, wearDate as columns 1-5 and loc as column 8.')
 
                 for line in lines[1:]:
                     line = line.strip()
@@ -576,7 +596,8 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
 
                     bits = line.split(",")
                     bits = [bit.replace("\"",'') for bit in bits]
-                    assert len(bits) == 3, "non_wear_times_file should have three columns (ID, startNW, endNW). Found: {}".format(bits)
+                    if len(bits) != 3:
+                        raise ValueError("SOL non-wear rows must have three columns (ID, startNW, endNW).")
                     start_time = bits[1].strip()
                     end_time = bits[2].strip()
 
@@ -584,19 +605,19 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
                     if id not in non_wear_dict:
                         non_wear_dict[id] = []
 
-                    try:
-                        # append datetime.datetime object
-                        start_time = datetime.strptime(start_time, "%m/%d/%y %H:%M")#.strftime("%Y-%m-%d %H:%M")
-                        end_time = datetime.strptime(end_time, "%m/%d/%y %H:%M")#.strftime("%Y-%m-%d %H:%M")
-                    except:
-                        raise Exception(
-                            "date should be in %m/%d/%y format and time should be in %H:%M format. Found: {}".format(line))
+                    start_time = parse_support_timestamp(start_time)
+                    end_time = parse_support_timestamp(end_time)
+                    if end_time < start_time:
+                        raise ValueError("SOL non-wear interval end must not precede its start.")
                     
                     non_wear_dict[id].append((start_time, end_time))
             else:
                 raise Exception(
                     "Unsupported non_wear_times_file format. Expected CHAP1.0, iWatch, or SOL headers. Found: {}".format(header)
                 )
+
+    if loc is not None and not location_specific_nonwear and not args.silent:
+        logger.warning('--loc has no effect without an iWatch-style non-wear file; no location filtering was applied.')
 
     # 5. n_start_ID
     if n_start_ID is not None:
@@ -682,56 +703,59 @@ def generate_pre_processed_data(gt3x_30Hz_csv_dir_root, valid_days_file, label_m
     logger.info("All finished")
 
 
-if __name__ == "__main__":
+def get_args_parser():
     parser = argparse.ArgumentParser(
-        description='Argument parser for preprocessing the input data.')
+        description='Argument parser for preprocessing the input data.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     optional_arguments = parser._action_groups.pop()
     required_arguments = parser.add_argument_group('required arguments')
     required_arguments.add_argument(
-        '--gt3x-dir', help='GT3X data directory', required=True)
+        '--gt3x-dir', help='GT3X data directory', required=True, default=argparse.SUPPRESS)
     required_arguments.add_argument(
-        '--pre-processed-dir', help='Pre-processed data directory', required=True)
+        '--pre-processed-dir', help='Pre-processed data directory', required=True, default=argparse.SUPPRESS)
 
     optional_arguments.add_argument(
-        '--valid-days-file', help='Path to the valid days file', required=False)
+        '--valid-days-file', help='Valid-day CSV; None means no valid-day restriction', default=None)
     optional_arguments.add_argument(
-        '--sleep-logs-file', help='Path to the sleep logs file', required=False)
+        '--sleep-logs-file', help='Sleep-log CSV; None means no explicit sleep intervals', default=None)
     optional_arguments.add_argument(
-        '--wear-logs-file', help='Path to the wear logs file', required=False)
+        '--wear-logs-file', help='Wear-log CSV; used as awake intervals for subjects without sleep logs; None disables this fallback', default=None)
     optional_arguments.add_argument(
-        '--loc', help='Wear location to use when parsing iWatch non-wear files: hip or wrist', choices=["hip", "wrist"], required=False)
+        '--loc', choices=["hip", "wrist"], default=None,
+        help='Select records by the loc column (column 8) of iWatch-style non-wear CSVs, not by wearLoc values. Required for that schema, including single-location files. Other studies may use the same schema. No effect for CHAP1/SOL non-wear formats or without a non-wear file; None selects neither hip nor wrist')
     optional_arguments.add_argument(
-        '--non-wear-times-file', help='Path to non wear times file', required=False)
+        '--non-wear-times-file', help='Non-wear CSV; None means no explicit non-wear intervals', default=None)
     optional_arguments.add_argument(
-        '--activpal-dir', help='ActivPAL data directory',  default=None, required=False)
+        '--activpal-dir', help='Label CSV directory; None produces unknown labels (-1)', default=None)
     
     optional_arguments.add_argument(
-        '--event-file', help='Interpret ActivPAL CSVs as event-format files with Time and Interval (s) columns. Leave unset for 1-second epoch ActivPAL files using TS_LOCAL.', default=False, required=False, action='store_true')
+        '--event-file', help='Read event-format labels with Time and Interval (s) columns. False uses 1-second epoch labels with TS_LOCAL', default=False, action='store_true')
     
-    optional_arguments.add_argument('--n-start-id', help='The index of the starting character of the ID in gt3x file names. Indexing starts with 1. \
-                        If specified `n_end_ID` should also be specified. If both `n_start_ID` and `expression_after_ID` is \
-                        specified, the latter will be ignored', type=int, required=False)
+    optional_arguments.add_argument('--n-start-id', help='First ID character in the filename, 1-based; requires --n-end-id and overrides --expression-after-id. None disables ID slicing', type=int, default=None)
     optional_arguments.add_argument(
-        '--n-end-id', help='The index of the ending character of the ID in gt3x file names', type=int, required=False)
-    optional_arguments.add_argument('--expression-after-id', help='String or list of strings specifying different string spliting character \
-         that should be used to identify the ID from gt3x file name. The first split will be used as the file name', type=str, required=False)
+        '--n-end-id', help='Last ID character in the filename, 1-based and inclusive; used with --n-start-id', type=int, default=None)
+    optional_arguments.add_argument('--expression-after-id', help='One delimiter string; use the filename prefix before its first occurrence as the subject ID. None uses the filename before its first dot, unless ID slicing is supplied', type=str, default=None)
 
     optional_arguments.add_argument(
-        '--window-size', help='Window size in seconds on which the predictions to be made (default: 10)', default=10, type=int, required=False)
+        '--window-size', help='Seconds per accelerometer window; keep 10 for submitted CHAP checkpoints', default=10, type=int)
     optional_arguments.add_argument(
-        '--gt3x-frequency', help='GT3X device frequency in Hz (default: 30)', default=30, type=int, required=False)
+        '--gt3x-frequency', help='Raw GT3X sampling frequency in Hz', default=30, type=int)
     optional_arguments.add_argument(
-        '--down-sample-frequency', help='Downsample frequency in Hz for GT3X data (default: 10)', default=10, type=int, required=False)
+        '--down-sample-frequency', help='Output sampling frequency in Hz; keep 10 for submitted CHAP checkpoints', default=10, type=int)
     optional_arguments.add_argument(
-        '--activpal-label-map', help='ActivPal label vocabulary (default: {"0": 0, "1": 1, "2": 1})', default='{"0": 0, "1": 1, "2": 1}', required=False)
+        '--activpal-label-map', help='JSON mapping from label codes to classes; unmapped/missing codes become -1', default='{"0": 0, "1": 1, "2": 1}')
     optional_arguments.add_argument(
-        '--silent', help='Whether to hide info messages', default=False, required=False, action='store_true')
+        '--silent', help='Hide routine info messages', default=False, action='store_true')
     optional_arguments.add_argument(
-        '--mp', help='Number of concurrent workers. Hint: set to the number of cores (default: %(default)s)', type=int, default=None)
+        '--mp', help='Number of concurrent workers; None runs serially', type=int, default=None)
     optional_arguments.add_argument(
-        '--gzipped', help='Whether the raw data is gzipped or not. Hint: extension should be .csv.gz (default: %(default)s)', default=False, action='store_true')
+        '--gzipped', help='Read .csv.gz raw files; False reads .csv files', default=False, action='store_true')
     parser._action_groups.append(optional_arguments)
-    args = parser.parse_args()
+    return parser
+
+
+if __name__ == "__main__":
+    args = get_args_parser().parse_args()
 
     if not os.path.exists(args.pre_processed_dir):
         os.makedirs(args.pre_processed_dir)

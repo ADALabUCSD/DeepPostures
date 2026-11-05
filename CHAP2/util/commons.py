@@ -96,9 +96,13 @@ class IterDatasetSubject(torch.utils.data.IterableDataset):
         return iter(self.generator(self.subject_data))
 
 
-def input_iterator(data_root, subject_id, train=False):
+def input_iterator(data_root, subject_id, train=False, filter_invalid=True):
     """
-    Iterate and read the preprocessed data files
+    Iterate and read the preprocessed data files.
+
+    By default, exclude sleep/non-wear windows and split at those windows.
+    Prediction can set filter_invalid=False to retain them. Unknown labels
+    are excluded only when train=True, independently of filter_invalid.
     """
 
     fnames = [
@@ -127,7 +131,7 @@ def input_iterator(data_root, subject_id, train=False):
             # if train and l == -1:
             #     raise Exception('Missing ground truth label information in pre-processed data')
 
-            if s == 1 or nw == 1 or (train and l == -1):
+            if (filter_invalid and (s == 1 or nw == 1)) or (train and l == -1):
                 if len(timestamps_batch) > 0:
                     yield np.array(data_batch), np.array(timestamps_batch), np.array(
                         label_batch
