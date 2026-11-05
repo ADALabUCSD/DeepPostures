@@ -79,7 +79,7 @@ CHAP2/
 ## Pre-Processing Data
 
 Use `pre_process/pre_process_data.py` to convert raw accelerometer and optional
-annotation files into daily HDF5 files:
+annotation files into daily HDF5 files. Run the commands below from `CHAP2/`:
 
 ```bash
 python pre_process/pre_process_data.py \
@@ -111,22 +111,77 @@ Argument summary:
 | `--gt3x-dir` | yes | - | Directory containing raw accelerometer CSV files. |
 | `--pre-processed-dir` | yes | - | Output directory for daily HDF5 files. |
 | `--valid-days-file` | no | `None` | Optional valid-day CSV. |
-| `--sleep-logs-file` | no | `None` | Optional sleep-log CSV. |
-| `--wear-logs-file` | no | `None` | Optional wear-log CSV. |
+| `--sleep-logs-file` | no | `None` | Optional sleep-log CSV; see supported formats below. |
+| `--wear-logs-file` | no | `None` | Optional wear-log CSV; provides awake intervals for subjects without sleep logs. |
 | `--non-wear-times-file` | no | `None` | Optional non-wear interval CSV. |
-| `--activpal-dir` | no | `None` | Directory containing ActivPAL label files. |
-| `--event-file` | no | `False` | Treat ActivPAL files as event-format files. |
-| `--loc` | no | `None` | iWatch location, either `hip` or `wrist`. |
-| `--n-start-id` | no | `None` | Starting character index for extracting subject IDs from filenames. |
-| `--n-end-id` | no | `None` | Ending character index for extracting subject IDs from filenames. |
-| `--expression-after-id` | no | `None` | Split expression used to extract subject IDs from filenames. |
+| `--activpal-dir` | no | `None` | Directory containing label CSV files; unset produces unknown labels (`-1`). |
+| `--event-file` | no | `False` | Read event-format labels with `Time` and `Interval (s)` columns; `False` uses 1-second epoch files with `TS_LOCAL`. |
+| `--loc` | no | `None` | `hip` or `wrist`; required when using an iWatch-style non-wear CSV. Neither location is selected by default. |
+| `--n-start-id` | no | `None` | First ID character in the filename, 1-based; requires `--n-end-id` and overrides `--expression-after-id`. |
+| `--n-end-id` | no | `None` | Last ID character in the filename, 1-based and inclusive; used with `--n-start-id`. |
+| `--expression-after-id` | no | `None` | One delimiter string; use the filename prefix before its first occurrence as the subject ID. Unset uses the filename before its first dot, unless ID slicing is supplied. |
 | `--window-size` | no | `10` | Window size in seconds for daily HDF5 windows. |
 | `--gt3x-frequency` | no | `30` | Raw accelerometer sampling frequency in Hz. |
 | `--down-sample-frequency` | no | `10` | Output sampling frequency in Hz. |
-| `--activpal-label-map` | no | `{"0": 0, "1": 1, "2": 1}` | Mapping from ActivPAL labels to CHAP binary labels. |
-| `--silent` | no | `False` | Hide informational messages. |
-| `--mp` | no | `None` | Number of multiprocessing workers. |
-| `--gzipped` | no | `False` | Read gzipped raw CSV files. |
+| `--activpal-label-map` | no | `{"0": 0, "1": 1, "2": 1}` | JSON mapping from label codes to classes; missing or unmapped codes become `-1`. |
+| `--silent` | no | `False` | Hide per-subject progress messages. |
+| `--mp` | no | `None` | Number of multiprocessing workers; `None` runs serially. |
+| `--gzipped` | no | `False` | Read `.csv.gz` raw files; `False` reads `.csv` files. |
+
+The two directory arguments are required and have no default. `None` means an
+optional argument is unset; omit the option rather than passing the string
+`None`. Run `python pre_process/pre_process_data.py --help` for complete usage.
+
+### Wear location and annotation formats
+
+`--loc` filters the eighth column, `loc`, in an iWatch-style non-wear CSV.
+The schema requires at least eight columns, with
+`ID,wearLoc,NW_DT,int.min,wearDate` as columns 1-5 and `loc` as column 8.
+It compares `loc` values (`Hip`/`Wrist`) without case sensitivity; `wearLoc`
+values are not used for location selection. Supply `--loc hip` or `--loc wrist`
+for this schema, even for a single-location file. The CLI does not accept `H`/`W`.
+
+Other studies may use the same supported schema; a `wearLoc` column alone is
+insufficient. For supported CHAP1.0/SOL non-wear formats or without a non-wear
+file, `--loc` has no effect and produces a warning unless `--silent` is set.
+Unsupported schemas raise an error. Match raw files and support files to the
+same wear location for each run; `--loc` does not select raw files or a model.
+
+Three-column SOL sleep logs accept either `ID,startsleep,endsleep` or
+`ID,startSL,endSL`. SOL non-wear logs use `ID,startNW,endNW`.
+Both accept local `YYYY-MM-DD HH:MM:SS` timestamps, preserving seconds,
+or the legacy minute format `M/D/YY HH:MM`. These examples are synthetic:
+
+```csv
+ID,startsleep,endsleep
+33333,2023-03-28 23:00:00,2023-03-29 09:09:00
+33333,2023-03-30 20:29:00,2023-03-31 09:14:30
+```
+
+```csv
+ID,startNW,endNW
+33333,2022-06-20 05:39:15,2022-06-20 07:16:30
+```
+
+Use the full-date format above when seconds are needed; appending seconds to
+the legacy slash-date format is not supported. SOL non-wear rows must have
+three columns and their end must not precede their start.
+
+The original iWatch non-wear logs use dates alone (midnight) or
+`YYYY-MM-DD HH:MM:00`, with duration in whole minutes (`int.min`). Their
+existing parser removes the seconds component and does not preserve nonzero
+seconds. CHAP1.0 five-column sleep/non-wear files retain their `HH:MM` convention.
+
+Second-level annotation timestamps do not change the default 10-second
+prediction resolution. Preprocessing stores sleep/non-wear flags using the
+most frequent sample-level flag within each window; prediction mode controls
+whether flagged windows are excluded during inference. For 1-second activPAL
+labels, alignment uses `TS_LOCAL`, not `TS_LOCAL_COR`.
+
+Keep `--window-size 10` seconds and `--down-sample-frequency 10` Hz for the
+submitted checkpoints. Set `--gt3x-frequency` to the source frequency and run
+different frequency groups separately. Use a fresh output directory: existing
+daily HDF5 files are not overwritten, and failures do not delete earlier files.
 
 For CHAP fine-tuning and labeled evaluation, unlabeled windows (`label == -1`)
 should be excluded. `create_dataset_split.py` drops these windows for training
@@ -182,6 +237,7 @@ python -m make_predictions \
   --data_dir <pre_processed_dir> \
   --checkpoint SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth \
   --prediction_dir <prediction_output_dir> \
+  --prediction_mode filtered \
   --batch_size 64 \
   --device cuda
 ```
@@ -204,9 +260,48 @@ Argument summary:
 | `--subjects` | no | `None` | Comma-separated subject IDs; default is all subject directories. |
 | `--model` | no | `CHAP` | Model architecture. Current prediction script supports `CHAP`. |
 | `--window_size` | no | `42` | Number of 10-second windows per inference chunk. |
+| `--prediction_mode` | no | `filtered` | `filtered` excludes sleep/non-wear windows; `consecutive` retains them for later exclusion from analysis. |
 | `--batch_size` | no | `64` | Inference batch size. |
 | `--device` | no | `cuda` | Inference device: `cuda` or `cpu`. |
 | `--seed` | no | `0` | Random seed. |
+
+### Prediction modes
+
+`filtered` is the default and preserves the original prediction behavior:
+exclude sleep/non-wear windows and start a new sequence after an excluded
+interval. Each retained sequence has its own incomplete tail discarded.
+
+Use `consecutive` to predict on recorded windows before removing sleep/non-wear
+periods from analysis:
+
+```bash
+python -m make_predictions \
+  --data_dir <pre_processed_dir> \
+  --checkpoint SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth \
+  --prediction_dir <prediction_output_dir> \
+  --prediction_mode consecutive \
+  --device cuda
+```
+
+Both modes retain unknown-label windows (`-1`) for prediction. The `label`
+column is included only when the retained output has labeled windows.
+`consecutive` also retains windows marked non-wear because they fall outside
+the valid-day list; apply the study's valid-day, sleep, and wear rules afterward.
+The prediction CSV contains binary posture predictions, without sleep/non-wear
+flag columns; obtain those flags from daily HDF5 files for subsequent filtering.
+Training/split construction continues to exclude sleep, non-wear, and unknown labels.
+
+Prediction `--window_size 42` means 42 ten-second windows (7 minutes of model
+context), with one prediction per 10-second window. Preprocessing `--window-size`
+is measured in seconds. Both modes drop incomplete inference chunks without
+padding, up to 41 windows (6 minutes 50 seconds) per sequence at the default size.
+For uninterrupted input in `consecutive` mode, only the final incomplete chunk
+is dropped; sleep/non-wear flags and calendar-day boundaries do not add tails.
+
+Use continuous recording input: daily filenames must cover consecutive dates.
+The iterator reads windows in stored order without checking every timestamp
+interval, and neither mode fills missing data. Run
+`python -m make_predictions --help` for all arguments and defaults.
 
 ## Fine-Tuning CHAP
 

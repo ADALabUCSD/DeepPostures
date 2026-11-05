@@ -4,8 +4,8 @@ DeepPostures
 
 This repository contains code artifacts for CHAP posture classification work:
 
-- `MSSE-2021/`: **CHAP1.0 PyTorch implementation for hip accelerometer sitting pattern classification**, released with *The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults*.
-- `CHAP2/`: **CHAP2.0 PyTorch code for CHAP zero-shot prediction and fine-tuning on wrist/hip accelerometer data**, including iWatch and SOL/PASOS workflows.
+- [MSSE-2021/](MSSE-2021/README.md): **CHAP1.0 PyTorch implementation for hip accelerometer sitting pattern classification**, released with *The CNN Hip Accelerometer Posture (CHAP) Method for Classifying Sitting Patterns from Hip Accelerometers: A Validation Study in Older Adults*.
+- [CHAP2/](CHAP2/README.md): **CHAP2.0 PyTorch code for CHAP zero-shot prediction and fine-tuning on wrist/hip accelerometer data**, including iWatch and SOL/PASOS workflows. See its README for preprocessing formats, prediction modes, and parameter defaults.
 
 **We strongly suggest starting with our website and then using the folder that matches your workflow.** Use `MSSE-2021/` for the original CHAP pipeline and `CHAP2/` for CHAP zero-shot/fine-tuning workflows.
 
@@ -37,7 +37,7 @@ For CHAP2.0 workflows, install the base environment above and then install the a
 Instructions
 ------------
 - Clone the repository using git `git clone https://github.com/ADALabUCSD/DeepPostures.git`
-- Navigate to the code directory of the workflow you want to explore and follow the instructions in the README file there. The `main` branch contains the PyTorch implementation for `MSSE-2021` and CHAP2.0 workflows. The `tensorflow` branch contains the previous TensorFlow implementation for both `MSSE-2021` and `JMPB-2021`.
+- Navigate to the code directory of the workflow you want to explore and follow the instructions in the README file there. The `master` branch contains the PyTorch implementation for `MSSE-2021` and CHAP2.0 workflows. The `tensorflow` branch contains the previous TensorFlow implementation for both `MSSE-2021` and `JMPB-2021`.
 - If you face any problems/issues, please create an issue in GitHub issue tracker.
 
 
