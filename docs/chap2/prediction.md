@@ -27,11 +27,15 @@ python -m make_predictions \
 
 Complete usage details of this script are as follows:
 
+`--data_dir`, `--checkpoint`, and `--prediction_dir` are required and have no
+default.
+
 ```text
 usage: make_predictions [-h] --data_dir DATA_DIR --checkpoint CHECKPOINT
                         --prediction_dir PREDICTION_DIR
                         [--subjects SUBJECTS] [--model MODEL]
                         [--window_size WINDOW_SIZE]
+                        [--prediction_mode {filtered,consecutive}]
                         [--batch_size BATCH_SIZE]
                         [--device {cpu,cuda}] [--seed SEED]
 
@@ -48,8 +52,8 @@ required arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --subjects SUBJECTS   Comma-separated subject IDs. The default is to run on
-                        all subject directories under --data_dir.
+  --subjects SUBJECTS   Comma-separated subject IDs (default: None, meaning all
+                        subject directories under --data_dir).
   --model MODEL         Model architecture (default: CHAP). The submitted
                         CHAP2.0 checkpoints use CHAP.
   --window_size WINDOW_SIZE
@@ -57,6 +61,9 @@ optional arguments:
                         (default: 42)
   --batch_size BATCH_SIZE
                         Inference batch size (default: 64)
+  --prediction_mode {filtered,consecutive}
+                        filtered excludes sleep/non-wear windows; consecutive
+                        retains them for later exclusion (default: filtered)
   --device {cpu,cuda}   Inference device (default: cuda)
   --seed SEED           Random seed (default: 0)
 ```
@@ -77,10 +84,25 @@ pre_processed_dir/
 ```
 
 Each daily HDF5 file should contain `data`, `label`, `time`, `non_wear`, and
-`sleeping` fields. The script groups contiguous awake/worn 10-second windows
+`sleeping` fields. In the default `filtered` mode, the script groups contiguous
+awake/worn 10-second windows
 into chunks of `--window_size` windows. The default `--window_size 42`
 corresponds to about 7 minutes. A trailing segment shorter than
 `--window_size` is dropped.
+
+Use `--prediction_mode consecutive` to retain sleep/non-wear windows during
+prediction and exclude those periods afterward. Both modes retain unknown-label
+windows for prediction and discard incomplete trailing inference chunks.
+For example:
+
+```bash
+python -m make_predictions \
+  --data_dir <pre_processed_dir> \
+  --checkpoint SUBMIT_RESULT/SOL_W/CHAP_FT/checkpoint-submit.pth \
+  --prediction_dir <prediction_output_dir> \
+  --prediction_mode consecutive \
+  --device cuda
+```
 
 ### Output format
 

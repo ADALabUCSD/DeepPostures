@@ -111,6 +111,10 @@ ID,startNW,endNW
 33333,6/20/22 23:58,6/21/22 10:12
 ```
 
+Start and end date/time values in these SOL sleep and non-wear logs can also
+be specified to the second using `YYYY-MM-DD HH:MM:SS`, such as
+`2023-03-31 09:14:30`.
+
 For datasets with mixed raw sampling frequencies, split raw files by frequency
 and run preprocessing separately with the matching `--gt3x-frequency`. For
 example, if a SOL/PASOS input directory contains both 60 Hz and 80 Hz files,
@@ -129,7 +133,7 @@ wear file for wrist ActiGraph data.
 | `--gt3x-dir` | Directory containing iWatch ActiGraph raw CSV or CSV.GZ files. Use `--gzipped` for `.csv.gz` files. Hip and wrist files are stored separately. |
 | `--activpal-dir` | Directory containing SenseCam-derived event label CSV files matched to the raw ActiGraph file names. Use `--event-file` for this format. |
 | `--valid-days-file` | Concurrent wear day CSV. Use the hip file for hip ActiGraph data and the wrist file for wrist ActiGraph data. |
-| `--non-wear-times-file` | iWatch ActiGraph non-wear interval file. If the file includes both hip and wrist records, pass `--loc hip` or `--loc wrist`. |
+| `--non-wear-times-file` | iWatch ActiGraph non-wear interval file. Pass `--loc hip` or `--loc wrist`, even for a single-location file; the default is `None`. |
 | `--wear-logs-file` | SenseCam-derived wear interval CSV. The preprocessing script uses it to anchor observed wear periods when sleep logs are not available. |
 
 The ActiGraph raw files are gzipped CSV files from hip (`H`) or wrist (`W`)
@@ -185,8 +189,11 @@ select the wear location:
 "ID","wearLoc","NW_DT","int.min","wearDate","timeNum","filename","loc"
 "33333","N",2014-04-16,1440,2014-04-16,0,"33333_N2005760sec.agd","Wrist"
 "33333","N",2014-04-17,874,2014-04-17,0,"33333_N2005760sec.agd","Wrist"
-"33333","N",2014-04-17 15:40:00,500,2014-04-17,940,"33333_N2005760sec.agd","Wrist"
 ```
+
+In `NW_DT`, a date-only value means midnight. A full date/time such as
+`2014-04-17 15:40:00` is also supported by preprocessing. The original iWatch
+non-wear timestamps are aligned to whole minutes.
 
 The wear-log file is derived from SenseCam wear periods and is used to anchor
 when participants were observed to be wearing the camera:
